@@ -33,18 +33,18 @@ const SetTransactionMarket = createAction(
 
 
 const FetchBuyTransactionData = createAction(
-    FETCH_BUY_TRANSACTION_DATA, async (sellToken, receiveToken, amount, network, proxyAddress) => {
-      console.log(sellToken, receiveToken, amount, network, proxyAddress);
-      loadObject(dsproxy.abi, proxyAddress).execute.call(
-          settings[network].proxyContracts.oasisSai,
-          `${methodSig('sellAllAmountPayEth(address,address,address,uint256)')}${addressToBytes32(settings[network].otc, false)}${addressToBytes32(settings[network].tokens[receiveToken], false)}${addressToBytes32(settings[network].tokens[sellToken], false)}${toBytes32(0, false)}`,
-          { value: web3.toWei(amount) },
-          (e, r) => {
-            if (!e) {
-              console.log(r);
-            }
-          });
-    }
+  FETCH_BUY_TRANSACTION_DATA, async (sellToken, receiveToken, amount, network, proxyAddress) => {
+    loadObject(dsproxy.abi, proxyAddress).execute['address,bytes'].call(
+      settings.chain[network].proxyContracts.oasisSai,
+      `${methodSig('sellAllAmountPayEth(address,address,address,uint256)')}${addressToBytes32(settings.chain[network].otc, false)}${addressToBytes32(settings.chain[network].tokens.weth, false)}${addressToBytes32(settings.chain[network].tokens[receiveToken.toLowerCase()], false)}${toBytes32(0, false)}`,
+      { value: web3.toWei(amount) },
+      (e, r) => {
+        if (!e) {
+          console.log(r);
+        }
+      }
+    );
+  }
 );
 
 
@@ -52,9 +52,23 @@ const FetchBuyTransactionData = createAction(
  * Fetch exchange rate for sell transaction
  */
 const FetchSellTransactionData = createAction(
-    FETCH_SELL_TRANSACTION_DATA, async (sellToken, receiveToken, amount) => (
-        {sellToken, receiveToken, amount}
-    )
+  FETCH_SELL_TRANSACTION_DATA, async (network, proxyAddress, sellToken, receiveToken, amount) => {
+    // sellToken is always weth for now (we are always selling native eth in this version)
+    web3.eth.getBalance(web3.eth.coinbase, (e, balance) => {
+      // TODO: The account should come from state.network.defaultAccount instead of using web3.eth.coinbase
+      if (!e) {
+        loadObject(dsproxy.abi, proxyAddress).execute.call(settings[network].proxyContracts.oasisSai,
+          `${methodSig('buyAllAmountPayEth(address,address,address,uint256)')}${addressToBytes32(settings[network].otc, false)}${addressToBytes32(settings[network].tokens[receiveToken.toLowerCase()], false)}${addressToBytes32(settings[network].tokens.weth, false)}${toBytes32(balance.valueOf(), false)}`,
+          { value: balance },
+          (e, r) => {
+            if (!e) {
+              console.log(r);
+            }
+          }
+        );
+      }
+    });
+  }
 );
 
 const SetTokenExchangeRate = createAction(

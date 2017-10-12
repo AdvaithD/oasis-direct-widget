@@ -2,7 +2,7 @@
   "nodeURL" : "https://sai-service.makerdao.com/parity",
   "chain": {
     "kovan": {
-      "otc": "0x375d52588c3f39ee7710290237a95C691d8432E7",
+      "otc": "0xb80fef87a9d500b4ae13b8737e653b7e6aba8c90",
       "tub": "",
       "tokens": {
         "weth": "0x53eccc9246c1e537d79199d0c7231e425a40f896",
