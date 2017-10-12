@@ -1,5 +1,14 @@
 import {createAction, handleActions} from 'redux-actions';
 import Immutable from 'immutable';
+import {
+  addressToBytes32, loadObject, methodSig,
+  toBytes32,
+} from '../../helpers';
+import web3 from '../../web3';
+
+const settings = require('../../settings');
+const dsproxy = require('../../abi/dsproxy');
+
 
 const SET_TRANSACTION_FEE = 'TRADE_DETAILS/SET_TRANSACTION_FEE';
 const SET_TOKEN_UNIT_SYMBOL = 'TRADE_DETAILS/SET_TOKEN_UNIT_SYMBOL';
@@ -24,14 +33,28 @@ const SetTransactionMarket = createAction(
 
 
 const FetchBuyTransactionData = createAction(
-    FETCH_BUY_TRANSACTION_DATA, async (buyToken, receiveToken, amount) => null
+    FETCH_BUY_TRANSACTION_DATA, async (sellToken, receiveToken, amount, network, proxyAddress) => {
+      console.log(sellToken, receiveToken, amount, network, proxyAddress);
+      loadObject(dsproxy.abi, proxyAddress).execute.call(
+          settings[network].proxyContracts.oasisSai,
+          `${methodSig('sellAllAmountPayEth(address,address,address,uint256)')}${addressToBytes32(settings[network].otc, false)}${addressToBytes32(settings[network].tokens[receiveToken], false)}${addressToBytes32(settings[network].tokens[sellToken], false)}${toBytes32(0, false)}`,
+          { value: web3.toWei(amount) },
+          (e, r) => {
+            if (!e) {
+              console.log(r);
+            }
+          });
+    }
 );
+
 
 /**
  * Fetch exchange rate for sell transaction
  */
 const FetchSellTransactionData = createAction(
-    FETCH_SELL_TRANSACTION_DATA, async (sellToken, receiveToken, amount) => null
+    FETCH_SELL_TRANSACTION_DATA, async (sellToken, receiveToken, amount) => (
+        {sellToken, receiveToken, amount}
+    )
 );
 
 const SetTokenExchangeRate = createAction(

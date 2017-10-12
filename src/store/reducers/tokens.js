@@ -12,29 +12,37 @@ const TokenSelected = createAction(
     (v) => v,
 );
 
-function DepositAmountChanged({ target: { value }}, sellToken, receiveToken) {
+function DepositAmountChanged(sellToken, receiveToken, value, appState) {
   return (dispatch) => {
       dispatch({
         type: DEPOSIT_AMOUNT_CHANGED,
         payload: { value: parseFloat(value)}
       });
       dispatch(
-          tradeDetailsHandler.actions.FetchSellTransactionData(
-              sellToken, receiveToken, value
+          tradeDetailsHandler.actions.FetchBuyTransactionData(
+              sellToken,
+              receiveToken,
+              value,
+              appState.network.network,
+              appState.system.proxy
           )
       )
   }
 }
 
-function BuyAmountChanged({ target: { value } }, buyToken, receiveToken) {
+function BuyAmountChanged(buyToken, receiveToken, value, appState) {
   return (dispatch) => {
     dispatch({
       type: BUY_AMOUNT_CHANGED,
       payload: { value: parseFloat(value)}
     });
     dispatch(
-        tradeDetailsHandler.actions.FetchBuyTransactionData(
-            buyToken, receiveToken, value
+        tradeDetailsHandler.actions.FetchSellTransactionData(
+            buyToken,
+            receiveToken,
+            value,
+            appState.network.network,
+            appState.system.proxy
         )
     )
   }
@@ -59,7 +67,7 @@ const reducer = handleActions(
               () => tokenSymbol
           )
       ,
-      [DEPOSIT_AMOUNT_CHANGED]: (state, {payload: { value }}) =>
+      [DEPOSIT_AMOUNT_CHANGED]: (state, {payload: {value} }) =>
           state
             .updateIn( ['deposit','amount'], v => value)
             .updateIn(['buy','amount'],
@@ -74,7 +82,7 @@ const reducer = handleActions(
                 }
             )
       ,
-      [BUY_AMOUNT_CHANGED]: (state, {payload: value}) =>
+      [BUY_AMOUNT_CHANGED]: (state, {payload: {value} }) =>
           state
           .updateIn(['buy','amount'], v => value)
           .updateIn(['deposit','amount'],

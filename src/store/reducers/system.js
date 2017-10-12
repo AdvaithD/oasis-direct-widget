@@ -24,8 +24,7 @@ const GetBuyAmount = createAction(
         if (!e) {
           console.log(r);
         }
-      }
-    );
+      });
   }
 )
 

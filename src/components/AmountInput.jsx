@@ -9,7 +9,8 @@ const propTypes = PropTypes && {
     name: PropTypes.string.isRequired,
     placeHolder: PropTypes.string,
     onChange: PropTypes.func.isRequired,
-    value: PropTypes.number
+    value: PropTypes.number,
+    selectedTokens: PropTypes.object.isRequired
   };
 const defaultProps = {};
 
@@ -20,7 +21,15 @@ class AmountInput extends PureComponent {
     this.onValueChange = this.onValueChange.bind(this);
   }
 
-  onValueChange(v) { this.props.onChange(v); }
+
+  onValueChange({target: {value}}) {
+    const { name, selectedTokens : {buy, deposit}, appState } = this.props;
+    console.log(appState);
+    switch (name) {
+      case 'buy':this.props.onChange(deposit, buy, value, appState); break;
+      case 'deposit':this.props.onChange(deposit, buy, value, appState); break;
+    }
+  }
 
   render() {
     const {

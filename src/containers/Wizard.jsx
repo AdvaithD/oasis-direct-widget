@@ -16,13 +16,13 @@ export class WizardWrapper extends PureComponent {
 
 
   render() {
-    const { activeStep } = this.props;
+    const { activeStep, appState } = this.props;
     switch(activeStep) {
 
       case 1:
-        return (<TradeDetailsWrapper/>);
+        return (<TradeDetailsWrapper appState={appState}/>);
       case 2:
-        return (<TradeFinalizerWrapper/>)
+        return (<TradeFinalizerWrapper appState={appState}/>);
 
       default: return null;
     }

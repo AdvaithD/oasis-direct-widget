@@ -445,10 +445,18 @@ frame
   //   }
   // }
 
+  componentWillUpdate(nextProps, nextState) {}
+
   render() {
-    return (
-      this.state.network.isConnected ? <Frame><WizardWrapper/></Frame>: <NoConnection />
-    );
+    if(this.state.network.isConnected) {
+      const { system, network }  = this.state;
+      return (
+          <Frame>
+            <WizardWrapper appState={{system, network}}/>
+          </Frame>
+      );
+    }
+    return (<NoConnection />);
   }
 }
 

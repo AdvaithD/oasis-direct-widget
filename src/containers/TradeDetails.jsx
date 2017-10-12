@@ -27,11 +27,13 @@ export class TradeDetailsWrapper extends PureComponent {
       depositTokenValue,
       buyTokenValue,
       depositTokenAmount,
-      buyTokenAmount
+      buyTokenAmount,
+      appState
     } = this.props;
 
     return (
       <TradeDetails
+        appState={appState}
         onBuyAmountChange={actions.BuyAmountChanged}
         onDepositAmountChange={actions.DepositAmountChanged}
         onStartTransaction={actions.StartTransaction}
@@ -57,8 +59,6 @@ export function mapStateToProps(state) {
 }
 export function mapDispatchToProps(dispatch) {
   const actions = {
-    FetchBuyTransactionData: tradeDetailsHandler.actions.FetchBuyTransactionData,
-    FetchSellTransactionData: tradeDetailsHandler.actions.FetchSellTransactionData,
     StartTransaction: systemHandler.actions.StartTransaction,
     BuyAmountChanged: tokensHandler.actions.BuyAmountChanged,
     DepositAmountChanged: tokensHandler.actions.DepositAmountChanged,

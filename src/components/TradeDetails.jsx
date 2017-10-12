@@ -40,9 +40,11 @@ class TradeDetails extends PureComponent {
       buyTokenValue,
       disabled,
       depositTokenAmount,
-      buyTokenAmount
+      buyTokenAmount,
+      appState
     } = this.props;
 
+    const selectedTokens = {deposit: depositTokenValue, buy: buyTokenValue};
     return (
       <section className={'TradeDetails'}>
         <TokenPickerContainer/>
@@ -59,6 +61,8 @@ class TradeDetails extends PureComponent {
                   tokenSymbol={depositTokenValue}
                 />
                 <AmountInput
+                  appState={appState}
+                  selectedTokens={selectedTokens}
                   value={depositTokenAmount}
                   onChange={onDepositAmountChange}
                   name="deposit"
@@ -75,6 +79,8 @@ class TradeDetails extends PureComponent {
                   tokenSymbol={buyTokenValue}
                 />
                 <AmountInput
+                  appState={appState}
+                  selectedTokens={selectedTokens}
                   value={buyTokenAmount}
                   onChange={onBuyAmountChange}
                   name="buy"
