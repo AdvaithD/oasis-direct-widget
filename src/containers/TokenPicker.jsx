@@ -1,14 +1,12 @@
 import React, { PureComponent } from 'react';
 import { PropTypes } from 'prop-types';
 // import ImmutablePropTypes from 'react-immutable-proptypes';
-import tokenPickerHandler from '../store/reducers/tokenPicker';
 
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import TokenPicker from '../components/TokenPicker';
-import tokenPickerSelectors from '../store/selectors/tokenPicker';
-import tokensSelectors from '../store/selectors/tokens';
-import tokensHandler from '../store/reducers/tokens';
+import selectors from '../store/selectors/system';
+import actionHandler from '../store/reducers/system';
 
 
 const propTypes = PropTypes && {
@@ -41,17 +39,17 @@ export class TokenPickerWrapper extends PureComponent {
 
 export function mapStateToProps(state) {
   return {
-    tokens: tokensSelectors.items(state),
-    activeTokenControlName: tokenPickerSelectors.activeTokenControlName(state),
-    isTokenPickerOpen: tokenPickerSelectors.isOpen(state),
-    selectedToken: tokenPickerSelectors.selectedToken(state),
-    disabledTokens: tokensSelectors.activeControlDisabledTokens(state)
+    tokens: selectors.items(state),
+    activeTokenControlName: selectors.activeTokenControlName(state),
+    isTokenPickerOpen: selectors.isOpen(state),
+    selectedToken: selectors.selectedToken(state),
+    disabledTokens: selectors.activeControlDisabledTokens(state)
   };
 }
 export function mapDispatchToProps(dispatch) {
   const actions = {
-      ...tokenPickerHandler.actions,
-      TokenSelected: tokensHandler.actions.TokenSelected
+      ...actionHandler.actions,
+      TokenSelected: actionHandler.actions.TokenSelected
   };
   return { actions: bindActionCreators(actions, dispatch) };
 }

@@ -111,3 +111,8 @@ export function loadObject(abi, address) {
 export function methodSig(method) {
   return web3.sha3(method).substring(0, 10)
 }
+
+export function fromWeiToDecimal(d) {
+
+  return web3.fromWei(d);
+}

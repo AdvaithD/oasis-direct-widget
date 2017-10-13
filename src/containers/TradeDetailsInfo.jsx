@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import { PropTypes } from 'prop-types';
 // import ImmutablePropTypes from 'react-immutable-proptypes';
-import tradeDetailsSelectors from './../store/selectors/tradeDetails';
+import selectors from './../store/selectors/system';
 
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
@@ -14,18 +14,15 @@ const propTypes = PropTypes && {
 export class TradeDetailsInfoWrapper extends PureComponent {
   render() {
     const { transactionInfo } = this.props;
-    if(transactionInfo) {
-      return (
-          (<TradeDetailsInfoBox transactionInfo={transactionInfo}/>)
-      );
-    }
-    return null;
+    return (
+        (<TradeDetailsInfoBox transactionInfo={transactionInfo}/>)
+    );
   }
 }
 
 export function mapStateToProps(state) {
   return {
-    transactionInfo: tradeDetailsSelectors.transactionInfo(state)
+    transactionInfo: selectors.transactionInfo(state)
   };
 }
 export function mapDispatchToProps(dispatch) {

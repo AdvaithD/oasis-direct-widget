@@ -4,7 +4,7 @@ import { PropTypes } from 'prop-types';
 
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import systemSelectors from '../store/selectors/system'
+import selectors from '../store/selectors/system'
 import TradeDetailsWrapper from './TradeDetails';
 import TradeFinalizerWrapper from "./TradeFinalizer";
 
@@ -31,7 +31,7 @@ export class WizardWrapper extends PureComponent {
 
 export function mapStateToProps(state) {
   return {
-    activeStep: systemSelectors.activeStep(state)
+    activeStep: selectors.activeStep(state)
   };
 }
 export function mapDispatchToProps(dispatch) {

@@ -3,6 +3,8 @@ import { PropTypes } from 'prop-types';
 // import ImmutablePropTypes from 'react-immutable-proptypes';
 
 import './TradeDetailsInfoBox.scss';
+import {formatNumber} from '../helpers';
+import tokenFormat from '../utils/tokenFormat';
 
 
 const propTypes = PropTypes && {
@@ -26,18 +28,27 @@ class TradeDetailsInfoBox extends PureComponent {
         tokenPriceUnitSymbol
       }
     } = this.props;
+
+    const isHidden =
+        !Object.entries(
+            this.props.transactionInfo
+        ).length ? 'TradeDetailsInfoBox--hidden': '';
+
+    const className = `TradeDetailsInfoBox ${isHidden}`;
+
+
     return (
-      <div className={'TradeDetailsInfoBox'}>
+      <div className={className}>
         <span>
           <span className='Value'>{market}</span>
         </span>
         <span>
           <span className="Label">Price </span>
-          <span className='Value'>{tokenPrice} {tokenPriceUnitSymbol}</span>
+          <span className='Value'>{tokenFormat(tokenPrice)} {tokenPriceUnitSymbol}</span>
         </span>
         <span>
           <span className="Label">Fee </span>
-          <span className='Value'>{transactionFee} ETH</span>
+          <span className='Value'>{tokenFormat(transactionFee)} ETH</span>
         </span>
       </div>
     );

@@ -4,12 +4,8 @@ import { PropTypes } from 'prop-types';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import TradeDetails from "../components/TradeDetails";
-import systemHandler from '../store/reducers/system';
-import transactionsSelectors from '../store/selectors/transactions';
-import tokenPickerHandler from '../store/reducers/tokenPicker';
-import tokensHandler from '../store/reducers/tokens';
-import tradeDetailsHandler from '../store/reducers/tradeDetails';
-import tokensSelectors from '../store/selectors/tokens';
+import actionHandler from '../store/reducers/system';
+import selectors from '../store/selectors/system';
 
 
 const propTypes = PropTypes && {
@@ -50,19 +46,19 @@ export class TradeDetailsWrapper extends PureComponent {
 
 export function mapStateToProps(state) {
   return {
-    disabled: !transactionsSelectors.canStartTransaction(state),
-    depositTokenValue: tokensSelectors.depositTokenValue(state),
-    buyTokenValue: tokensSelectors.buyTokenValue(state),
-    depositTokenAmount: tokensSelectors.depositTokenAmount(state),
-    buyTokenAmount: tokensSelectors.buyTokenAmount(state)
+    disabled: !selectors.canStartTransaction(state),
+    depositTokenValue: selectors.depositTokenValue(state),
+    buyTokenValue: selectors.buyTokenValue(state),
+    depositTokenAmount: selectors.depositTokenAmount(state),
+    buyTokenAmount: selectors.buyTokenAmount(state)
   };
 }
 export function mapDispatchToProps(dispatch) {
   const actions = {
-    StartTransaction: systemHandler.actions.StartTransaction,
-    BuyAmountChanged: tokensHandler.actions.BuyAmountChanged,
-    DepositAmountChanged: tokensHandler.actions.DepositAmountChanged,
-    ToggleTokenPicker: tokenPickerHandler.actions.ToggleOpen
+    StartTransaction: actionHandler.actions.StartTransaction,
+    BuyAmountChanged: actionHandler.actions.BuyAmountChanged,
+    DepositAmountChanged: actionHandler.actions.DepositAmountChanged,
+    ToggleTokenPicker: actionHandler.actions.ToggleOpen
   };
   return { actions: bindActionCreators(actions, dispatch) };
 }
