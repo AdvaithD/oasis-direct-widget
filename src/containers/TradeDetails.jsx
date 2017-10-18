@@ -24,7 +24,11 @@ export class TradeDetailsWrapper extends PureComponent {
       buyTokenValue,
       depositTokenAmount,
       buyTokenAmount,
-      appState
+      appState,
+      buyAmountErrors,
+      depositAmountErrors,
+      isBuyAmountControlDisabled,
+      isDepositAmountControlDisabled
     } = this.props;
 
     return (
@@ -39,6 +43,10 @@ export class TradeDetailsWrapper extends PureComponent {
         disabled={disabled}
         depositTokenAmount={depositTokenAmount}
         buyTokenAmount={buyTokenAmount}
+        buyAmountErrors={buyAmountErrors}
+        depositAmountErrors={depositAmountErrors}
+        isDepositAmountControlDisabled={isDepositAmountControlDisabled}
+        isBuyAmountControlDisabled={isBuyAmountControlDisabled}
       />
     );
   }
@@ -50,7 +58,11 @@ export function mapStateToProps(state) {
     depositTokenValue: selectors.depositTokenValue(state),
     buyTokenValue: selectors.buyTokenValue(state),
     depositTokenAmount: selectors.depositTokenAmount(state),
-    buyTokenAmount: selectors.buyTokenAmount(state)
+    buyTokenAmount: selectors.buyTokenAmount(state),
+    depositAmountErrors: selectors.depositTokenAmountErrors(state),
+    buyAmountErrors: selectors.buyTokenAmountErrors(state),
+    isBuyAmountControlDisabled: selectors.isBuyAmountControlDisabled(state),
+    isDepositAmountControlDisabled:selectors.isDepositAmountControlDisabled(state)
   };
 }
 export function mapDispatchToProps(dispatch) {

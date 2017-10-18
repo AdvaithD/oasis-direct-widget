@@ -6,11 +6,18 @@ import {
 } from '../../helpers';
 import web3 from '../../web3';
 
+import {fulfilled, pending, rejected} from '../../utils/store';
+import BigNumber from 'bignumber.js';
 import promisify from '../../utils/promisify';
-import { fulfilled } from '../../utils/store';
-
 const settings = require('../../settings');
 const dsproxy = require('../../abi/dsproxy');
+
+
+
+export const constants = Object.freeze({
+  TRANSACTION_TYPE_BUY:  'TRANSACTION_TYPE_BUY',
+  TRANSACTION_TYPE_SELL: 'TRANSACTION_TYPE_SELL'
+});
 
 /**
  *
@@ -18,11 +25,39 @@ const dsproxy = require('../../abi/dsproxy');
  *
  */
 
+/**
+ * System actions
+ */
+
 const START_TRANSACTION = 'SYSTEM/START_TRANSACTION';
+const INIT_NETWORK = 'SYSTEM/INIT_NETWORK';
+
+const SYNC_NETWORK_DATA = 'SYSTEM/SYNC_NETWORK_DATA';
+const SYNC_SYSTEM_DATA =  'SYSTEM/SYNC_SYSTEM_DATA';
+const SYNC_DEFAULT_ACCOUNT_ETHER_BALANCE =
+    'SYSTEM/SYNC_DEFAULT_ACCOUNT_ETHER_BALANCE';
+
+
 
 const StartTransaction = createAction(
-    START_TRANSACTION, (state) => undefined
-)
+    START_TRANSACTION, (data) => data
+);
+
+const InitNetwork = createAction(
+    INIT_NETWORK, (data) => data
+);
+
+const SyncNetworkData = createAction(
+    SYNC_NETWORK_DATA, (data) => data
+);
+
+const SyncSystemData = createAction(
+    SYNC_SYSTEM_DATA, (data) => data
+);
+
+const SyncDefaultAccountEtherBalance = createAction(
+    SYNC_DEFAULT_ACCOUNT_ETHER_BALANCE, (data) => data
+);
 
 /**
  * Token picker actions
@@ -61,63 +96,206 @@ const ResetTokenControlName = createAction(
 
 
 const TOKEN_SELECTED = 'TOKENS/TOKEN_SELECTED';
+
+const RESET_AMOUNT_INPUTS = 'TOKENS/RESET_AMOUNT_INPUTS';
+const RESET_DEPOSIT_AMOUNT_INPUT = 'TOKENS/RESET_DEPOSIT_AMOUNT_INPUT';
+const RESET_BUY_AMOUNT_INPUT = 'TOKENS/RESET_BUY_AMOUNT_INPUT';
+
 const DEPOSIT_AMOUNT_CHANGED = 'TOKENS/DEPOSIT_AMOUNT_CHANGED';
+const DEPOSIT_AMOUNT_OVER_THE_LIMIT = 'TOKENS/DEPOSIT_AMOUNT_OVER_THE_LIMIT';
+const DEPOSIT_AMOUNT_UNDER_THE_LIMIT = 'TOKENS/DEPOSIT_AMOUNT_UNDER_THE_LIMIT';
+const DEPOSIT_AMOUNT_RESET_ERRORS = 'TOKENS/DEPOSIT_AMOUNT_RESET_ERRORS';
+const DEPOSIT_AMOUNT_SET_ENABLED = 'TOKENS/DEPOSIT_AMOUNT_SET_ENABLED';
+const DEPOSIT_AMOUNT_SET_DISABLED = 'TOKENS/DEPOSIT_AMOUNT_SET_DISABLED';
+
 const BUY_AMOUNT_CHANGED = 'TOKENS/BUY_AMOUNT_CHANGED';
+const BUY_AMOUNT_OVER_THE_LIMIT = 'TOKENS/BUY_AMOUNT_OVER_THE_LIMIT';
+const BUY_AMOUNT_UNDER_THE_LIMIT = 'TOKENS/BUY_AMOUNT_UNDER_THE_LIMIT';
+const BUY_AMOUNT_RESET_ERRORS = 'TOKENS/BUY_AMOUNT_RESET_ERRORS';
+const BUY_AMOUNT_SET_ENABLED = 'TOKENS/BUY_AMOUNT_SET_ENABLED';
+const BUY_AMOUNT_SET_DISABLED = 'TOKENS/BUY_AMOUNT_SET_DISABLED';
+
 
 const TokenSelected = createAction(
   TOKEN_SELECTED,
   (v) => v,
 );
 
-function DepositAmountChanged(sellToken, receiveToken, value, appState) {
+function ChangeSelectedToken(token) {
   return (dispatch) => {
-    dispatch({
-      type: DEPOSIT_AMOUNT_CHANGED,
-      payload: { value: parseFloat(value)}
-    });
-    dispatch(
-      actions.FetchBuyTransactionData(
-        sellToken,
-        receiveToken,
-        value,
-        appState.network.network,
-        appState.system.proxy
-      )
-    );
-    dispatch(
-      actions.FetchBuyTransactionGasCost(
-        sellToken,
-        receiveToken,
-        value,
-        appState.network.network,
-        appState.system.proxy
-      )
-    );
+    dispatch(TokenSelected(token));
+    dispatch(ResetAmountInputs());
+    dispatch(ResetInfoBox());
+  };
+}
+
+function DepositAmountChanged(
+    sellToken,
+    receiveToken,
+    value,
+    appState,
+    hasErrors
+) {
+
+  return async (dispatch) => {
+    console.log({value});
+    if(!isNaN(parseFloat(value)) && Number(value) >= 0) {
+      const bnValue = new BigNumber(value);
+      dispatch({
+        type: DEPOSIT_AMOUNT_CHANGED,
+        payload: { value }
+      });
+
+      if(bnValue.toNumber() > 0) {
+        // TODO rely on actual events for this account address
+        let accountBalance = await promisify(web3.eth.getBalance)(
+            appState.network.defaultAccount
+        );
+        if(web3.fromWei(accountBalance, 'ether').sub(bnValue) < 0) {
+          dispatch(DepositAmountOverTheLimit(bnValue.toNumber()));
+        } else {
+
+          if(hasErrors) { dispatch(DepositAmountResetErrors()); }
+          dispatch(ResetInfoBox());
+          dispatch(
+              FetchBuyTransactionData(
+                  sellToken,
+                  receiveToken,
+                  value,
+                  appState.network.network,
+                  appState.system.proxy
+              )
+          );
+          dispatch(
+              FetchBuyTransactionGasCost(
+                  sellToken,
+                  receiveToken,
+                  value,
+                  appState.network.network,
+                  appState.system.proxy
+              )
+          );
+          dispatch(SetTransactionType(constants.TRANSACTION_TYPE_BUY))
+        }
+
+      } else {
+        dispatch(ResetInfoBox());
+        dispatch(ResetBuyAmountInput());
+
+      }
+    }
   }
 }
 
-function BuyAmountChanged(buyToken, receiveToken, value, appState) {
-  return (dispatch) => {
-    dispatch({
-      type: BUY_AMOUNT_CHANGED,
-      payload: { value: parseFloat(value)}
-    });
-    dispatch(
-      actions.FetchSellTransactionData(
-        buyToken,
-        receiveToken,
-        value,
-        appState.network.network,
-        appState.system.proxy
-      )
-    )
+
+function BuyAmountChanged(buyToken, receiveToken, value, appState, hasErrors) {
+  return async (dispatch) => {
+    if(!isNaN(parseFloat(value)) && Number(value) >= 0) {
+      const bnValue = new BigNumber(value);
+      dispatch({
+        type: BUY_AMOUNT_CHANGED,
+        payload: { value: bnValue }
+      });
+
+      if(bnValue.toNumber() > 0) {
+
+        // TODO rely on actual events for this account address
+          if(hasErrors) { dispatch(BuyAmountResetErrors()); }
+          dispatch(ResetInfoBox());
+          dispatch(
+              FetchSellTransactionData(
+                  buyToken,
+                  receiveToken,
+                  value,
+                  appState.network.network,
+                  appState.system.proxy
+              )
+          );
+          dispatch(SetTransactionType(constants.TRANSACTION_TYPE_BUY))
+
+      } else {
+        dispatch(ResetInfoBox());
+        dispatch(ResetDepositAmountInput());
+      }
+    }
   }
 }
+
+const ResetAmountInputs = createAction(
+    RESET_AMOUNT_INPUTS,
+    () => null
+);
+
+
+const ResetBuyAmountInput = createAction(
+    RESET_BUY_AMOUNT_INPUT,
+    () => null
+);
+
+const ResetDepositAmountInput = createAction(
+    RESET_DEPOSIT_AMOUNT_INPUT,
+    () => null
+);
+
+const  DepositAmountOverTheLimit = createAction(
+    DEPOSIT_AMOUNT_OVER_THE_LIMIT,
+    (value, limit) => ({value, limit})
+);
+
+const  DepositAmountUnderTheLimit = createAction(
+    DEPOSIT_AMOUNT_UNDER_THE_LIMIT,
+    (value, limit) => ({value, limit})
+);
+
+const  DepositAmountResetErrors = createAction(
+    DEPOSIT_AMOUNT_RESET_ERRORS,
+    (resetOverTheLimit=true) =>
+        ({overTheLimit: !resetOverTheLimit, underTheLimit: false})
+);
+
+const  DepositAmountSetDisabled = createAction(
+    DEPOSIT_AMOUNT_SET_DISABLED,
+    () => null
+);
+
+const  DepositAmountSetEnabled = createAction(
+    DEPOSIT_AMOUNT_SET_ENABLED,
+    () => null
+);
+
+const  BuyAmountOverTheLimit = createAction(
+   BUY_AMOUNT_OVER_THE_LIMIT,
+    (value, limit) => ({value, limit})
+);
+
+
+const BuyAmountUnderTheLimit = createAction(
+    BUY_AMOUNT_UNDER_THE_LIMIT,
+    (value, limit) => ({value, limit})
+);
+
+const  BuyAmountResetErrors = createAction(
+    BUY_AMOUNT_RESET_ERRORS,
+    (resetOverTheLimit=true) =>
+        ({overTheLimit: resetOverTheLimit, underTheLimit: false})
+);
+
+const  BuyAmountSetDisabled = createAction(
+    BUY_AMOUNT_SET_DISABLED,
+    () => null
+);
+
+const  BuyAmountSetEnabled = createAction(
+    BUY_AMOUNT_SET_ENABLED,
+    () => null
+);
 
 /**
  * Trade details actions
  */
 
+const SET_TRANSACTION_TYPE = 'TRADE_DETAILS/SET_TRANSACTION_TYPE';
+const RESET_TRANSACTION_TYPE = 'TRADE_DETAILS/RESET_TRANSACTION_TYPE';
 
 const SET_TRANSACTION_FEE = 'TRADE_DETAILS/SET_TRANSACTION_FEE';
 const SET_TOKEN_UNIT_SYMBOL = 'TRADE_DETAILS/SET_TOKEN_UNIT_SYMBOL';
@@ -128,6 +306,21 @@ const FETCH_BUY_TRANSACTION_DATA = 'TRADE_DETAILS/FETCH_BUY_TRANSACTION_DATA';
 const FETCH_BUY_TRANSACTION_GAS_COST = 'TRADE_DETAILS/FETCH_BUY_TRANSACTION_GAS_COST';
 const FETCH_SELL_TRANSACTION_DATA = 'TRADE_DETAILS/FETCH_SELL_TRANSACTION_DATA';
 
+const RESET_INFO_BOX = 'TRADE_DETAILS/RESET_INFO_BOX';
+
+
+const ResetInfoBox = createAction(
+    RESET_INFO_BOX, () => null
+);
+
+
+const SetTransactionType = createAction(
+    SET_TRANSACTION_TYPE, (transactionType) => transactionType
+);
+
+const ResetTransactionType = createAction(
+    RESET_TRANSACTION_TYPE, (transactionType) => transactionType
+);
 
 const SetTransactionFee = createAction(
     SET_TRANSACTION_FEE, (transactionFee) => (d) => transactionFee
@@ -145,24 +338,30 @@ const SetTransactionMarket = createAction(
 const FetchBuyTransactionData = createAction(
   FETCH_BUY_TRANSACTION_DATA, async (sellToken, receiveToken, amount, network, proxyAddress) =>
     new Promise((resolve, reject)=> {
-      loadObject(dsproxy.abi, proxyAddress).execute['address,bytes'].call(
-        settings.chain[network].proxyContracts.oasisSai,
-        `${methodSig('sellAllAmountPayEth(address,address,address,uint256)')}
+        loadObject(dsproxy.abi, proxyAddress).execute['address,bytes'].call(
+            settings.chain[network].proxyContracts.oasisSai,
+            `${methodSig('sellAllAmountPayEth(address,address,address,uint256)')}
         ${addressToBytes32(settings.chain[network].otc, false)}
-        ${addressToBytes32(settings.chain[network].tokens.weth, false)}
-        ${addressToBytes32(settings.chain[network].tokens[receiveToken.toLowerCase()], false)}
+        ${addressToBytes32(settings.chain[network].tokens['WETH'], false)}
+        ${addressToBytes32(settings.chain[network].tokens[receiveToken], false)}
         ${toBytes32(0, false)}`,
-        { value: web3.toWei(amount) },
-        (e, r) => {
-          if (!e) {
-            resolve(r !== '0x' ? web3.toBigNumber(r) : r);
-          } else {
-            reject(e);
-          }
-        }
-      );
-    }
-  )
+            { value: web3.toWei(amount) },
+            (e, r) => {
+              if (!e) {
+                if(r === '0x') {
+                  reject({error: 'FETCH_BUY_TRANSACTION_DATA:REJECTED' });
+                } else {
+                  console.log('FetchBuyTransactionData resolved value', r);
+                  resolve(web3.fromWei(web3.toBigNumber(r), 'ether'));
+                }
+              } else {
+                reject({error: e});
+              }
+            }
+        );
+      }
+    ),
+    () => ({ debounce: { time: 300, key: 'FetchBuyTransactionData' } })
 );
 
 const FetchBuyTransactionGasCost = createAction(
@@ -172,20 +371,19 @@ const FetchBuyTransactionGasCost = createAction(
         settings.chain[network].proxyContracts.oasisSai,
         `${methodSig('sellAllAmountPayEth(address,address,address,uint256)')}
         ${addressToBytes32(settings.chain[network].otc, false)}
-        ${addressToBytes32(settings.chain[network].tokens.weth, false)}
-        ${addressToBytes32(settings.chain[network].tokens[receiveToken.toLowerCase()], false)}
+        ${addressToBytes32(settings.chain[network].tokens['WETH'], false)}
+        ${addressToBytes32(settings.chain[network].tokens[receiveToken], false)}
         ${toBytes32(0, false)}`
       );
-      web3.eth.estimateGas({ to: proxyAddress, data, value: web3.toWei(amount) }, (e, r) => {
-        if (!e) {
-          console.log(r);
-          resolve(r);
-        } else {
-          reject(e);
-        }
-      });
+      web3.eth.estimateGas(
+          { to: proxyAddress, data, value: web3.toWei(amount) },
+          (e, r) => {
+            if (!e) { resolve(r); } else { reject(e); }
+          }
+      );
     }
-  )
+  ),
+  ({ debounce: { time: 300, key: 'FetchBuyTransactionGasCost' } })
 );
 
 
@@ -193,33 +391,44 @@ const FetchBuyTransactionGasCost = createAction(
  * Fetch exchange rate for sell transaction
  */
 const FetchSellTransactionData = createAction(
-  FETCH_SELL_TRANSACTION_DATA, async (network, proxyAddress, sellToken, receiveToken, amount) => {
+  FETCH_SELL_TRANSACTION_DATA, async (sellToken, receiveToken, amount, network, proxyAddress) =>
     // sellToken is always weth for now (we are always selling native eth in this version)
-    web3.eth.getBalance(web3.eth.coinbase, (e, balance) => {
-      // TODO: The account should come from state.network.defaultAccount instead of using web3.eth.coinbase
-      if (!e) {
-        loadObject(dsproxy.abi, proxyAddress).execute.call(settings[network].proxyContracts.oasisSai,
-        `${methodSig('buyAllAmountPayEth(address,address,address,uint256)')}
-        ${addressToBytes32(settings[network].otc, false)}
-        ${addressToBytes32(settings[network].tokens[receiveToken.toLowerCase()], false)}
-        ${addressToBytes32(settings[network].tokens.weth, false)}
+    new Promise((resolve, reject) => {
+    console.log(
+        {receiveToken }
+    );
+      web3.eth.getBalance(web3.eth.coinbase, (e, balance) => {
+        // TODO: The account should come from state.network.defaultAccount instead of using web3.eth.coinbase
+        if (!e) {
+          loadObject(dsproxy.abi, proxyAddress).execute.call(settings.chain[network].proxyContracts.oasisSai,
+              `${methodSig('buyAllAmountPayEth(address,address,address,uint256)')}
+        ${addressToBytes32(settings.chain[network].otc, false)}
+        ${addressToBytes32(settings.chain[network].tokens[receiveToken], false)}
+        ${addressToBytes32(settings.chain[network].tokens['WETH'], false)}
         ${toBytes32(balance.valueOf(), false)}`,
-        { value: balance },
-        (e, r) => {
-          if (!e) {
-            console.log(r);
-          }
+              { value: balance },
+              (e, r) => {
+                if (!e) {
+                  if(r === '0x') {
+                    reject({error: 'FETCH_BUY_TRANSACTION_DATA:REJECTED' });
+                  } else {
+                    resolve(web3.fromWei(web3.toBigNumber(r), 'ether'));
+                  }
+                } else {
+                  reject({error: e});
+                }
+              }
+          );
         }
-        );
-      }
-    });
-  }
+      });
+    }),
+    ({ debounce: { time: 300, key: 'FetchSellTransactionData' } })
 );
 
 const SetTokenExchangeRate = createAction(
   SET_TOKEN_EXCHANGE_RATE,
   () => null
-)
+);
 
 
 const actions = {
@@ -233,27 +442,33 @@ const actions = {
   /**
    * System
    */
+  InitNetwork,
   StartTransaction,
+  SyncNetworkData,
+  SyncSystemData,
+  SyncDefaultAccountEtherBalance,
+
   /**
    * Tokens
    */
-  TokenSelected,
+  ChangeSelectedToken,
   BuyAmountChanged,
   DepositAmountChanged,
   /**
    * Trade details
    */
+  SetTransactionType,
+  ResetAmountInputs,
   SetTransactionFee,
   SetTokenPriceUnitSymbol,
   SetTransactionMarket,
   FetchBuyTransactionData,
   FetchBuyTransactionGasCost,
-  FetchSellTransactionData
+  FetchSellTransactionData,
 };
 
 
 /**
- *
  *  _________________HANDLERS___________________
  *
  */
@@ -261,18 +476,22 @@ const actions = {
 
 const initialState = Immutable.fromJS(
     {
+
       /**
        * eth related data
        */
       eth: {
         system: null,
-        network: null
+        network: null,
+        defaultAccountBalance: null
       },
+
       /**
        * System
        */
       step: 1,
       type: 'basic',
+
       /**
        * TokenPicker
        */
@@ -282,42 +501,58 @@ const initialState = Immutable.fromJS(
       /**
        * Tokens
        */
+
       items: [
-        { symbol: 'ETH', name: 'Ether' },
+        { symbol: 'WETH', name: 'Ether' },
         { symbol: 'MKR', name: 'Maker' },
         { symbol: 'REP', name: 'Augur' },
         { symbol: 'GNT', name: 'Golem' },
         { symbol: 'DGX', name: 'Digix' },
         { symbol: 'SAI', name: 'SAI' },
       ],
+
       deposit: {
         amount: 0,
+        disableControl: false,
         disabled: [
           'MKR', 'REP', 'GNT', 'DGX','SAI'
         ],
-        value: 'ETH',
+        errors: {overTheLimit: false, valueToSmall: false},
+        value: 'WETH',
       },
+
       buy: {
         amount: 0,
-        disabled: ['ETH'],
+        disableControl: false,
+        disabled: ['WETH'],
+        errors: {overTheLimit: false, valueToSmall: false},
         value: 'SAI',
       },
+
       tokenPrice: null,
       tokenExchangeRate: null,
       transactionFee: null,
       tokenPriceUnitSymbol: 'ETH',
-      market: 'Oasisdex'
+      market: 'Oasisdex',
 
+      transaction: {
+        type: null,
+        status: null
+      }
     }
-)
+);
 
 
 const reducer = handleActions({
   /**
    * System handlers
    */
+  [InitNetwork]: (state) => state,
   [StartTransaction]: (state) => state.set('step', 2),
-
+  [SyncNetworkData]: (state, {payload}) =>
+      state.updateIn(['eth', 'network'], () => payload),
+  [SyncSystemData]: (state, {payload}) =>
+      state.updateIn(['eth', 'system'], () => payload),
   /**
    * Token picker handlers
    */
@@ -328,7 +563,7 @@ const reducer = handleActions({
   ,
   [SetTokenControlName]: (state, {payload}) =>
       state
-      .update('activeTokenControlName', () => payload),
+        .update('activeTokenControlName', () => payload),
   [ResetTokenControlName]: (state) =>
       state
       .update('activeTokenControlName', () => null),
@@ -337,6 +572,20 @@ const reducer = handleActions({
    * Tokens handlers
    */
 
+  [ResetAmountInputs]: (state) =>
+      state
+      .setIn(['buy','amount'], null)
+      .setIn(['deposit','amount'], null)
+  ,
+  [ResetDepositAmountInput]: (state) => state.setIn(['deposit', 'amount'], null),
+  [ResetBuyAmountInput]: (state) => state.setIn(['buy', 'amount'], null),
+  [ResetInfoBox]: (state) =>
+      state
+      .set('tokenPrice', null)
+      .set('transactionFee', null)
+      .set('tokenExchangeRate', null)
+      .set('transactionFee', null)
+  ,
   [TokenSelected]: (
       state,
       { payload: {tokenSymbol, activeTokenControlName} }
@@ -349,20 +598,61 @@ const reducer = handleActions({
   ,
   [DEPOSIT_AMOUNT_CHANGED]: (state, {payload: {value} }) =>
       state
-      .updateIn( ['deposit','amount'], v => web3.toBigNumber(web3.toWei(value)))
+      .updateIn( ['deposit','amount'], v => web3.toBigNumber(value))
   ,
+  [DepositAmountOverTheLimit]: (state, { payload: { value, limit } }) =>
+      state.updateIn(
+          ['deposit','errors'], (e) => ({...e, overTheLimit: true})
+      ),
+  [DepositAmountUnderTheLimit]: (state, { payload: { value, limit } }) =>
+      state.updateIn(
+          ['deposit','errors'], (e) => ({...e, underTheLimit: true})
+      ),
+  [DepositAmountResetErrors]: (state, { payload }) =>
+      state.setIn(
+          ['deposit','errors'], payload
+      ),
+  [DepositAmountSetEnabled]: (state, { payload }) =>
+      state.setIn(
+          ['deposit','disableControl'], false
+      ),
+  [DepositAmountSetDisabled]: (state) =>
+      state.setIn(
+          ['deposit','disableControl'], true
+      ),
+
+  [BuyAmountOverTheLimit]: (state, { payload: { value, limit } }) =>
+      state.updateIn(
+          ['buy','errors'], (e) => ({...e, overTheLimit: true})
+      ),
+  [BuyAmountUnderTheLimit]: (state, { payload: { value, limit } }) =>
+      state.updateIn(
+          ['deposit','errors'], (e) => ({...e, underTheLimit: true})
+      ),
+  [BuyAmountResetErrors]: (state, { payload }) =>
+      state.setIn(
+          ['buy','errors'], payload
+      ),
   [BUY_AMOUNT_CHANGED]: (state, {payload: {value} }) =>
       state
-      .updateIn(['buy','amount'], v => web3.toBigNumber(web3.toWei(value)))
+      .updateIn(['buy','amount'], v => web3.toBigNumber(value))
   ,
-  [actions.FetchSellTransactionData]: (state, {payload})=>
-      state.updateIn(['buy','amount'], payload),
-  [actions.FetchBuyTransactionData]: (state)=> (state),
-  [actions.FetchBuyTransactionGasCost]: (state)=> (state),
+  [BuyAmountSetEnabled]: (state, { payload }) =>
+      state.setIn(
+          ['buy','disableControl'], false
+      ),
+  [BuyAmountSetDisabled]: (state) =>
+      state.setIn(
+          ['buy','disableControl'], true
+      ),
   /**
    * Trade details handlers
    */
 
+  [SetTransactionType]: (state, {payload}) =>
+      state.setIn(['transaction', 'type'], payload),
+  [ResetTransactionType]: (state, {payload}) =>
+      state.setIn(['transaction', 'type'], null),
   [SetTransactionFee]: (state, {payload}) =>
       state
       .update(
@@ -375,22 +665,49 @@ const reducer = handleActions({
       ),
   [SetTransactionMarket]: (state, {payload}) =>
       state
-      .update('market', v => payload)
-  ,
+      .update('market', v => payload),
+
+
+
+  [pending(FetchBuyTransactionData)]: (state) => state,
   [fulfilled(FetchBuyTransactionData)]: (state, {payload}) =>
       state
       .updateIn(['buy','amount'], () => payload)
-      .update('tokenPrice', () => payload.div(1)) // TODO: Replace "1" to depositAmount. Tried using selectors.depositTokenValue(state) but did not work
-  ,
+      .update(
+          'tokenPrice',
+          () => {
+            const buyAmount = payload;
+            const depositAmount = state.getIn(['deposit', 'amount']);
+            return depositAmount.div(buyAmount).toFormat(5);
+          }
+      ),
+  [rejected(FetchBuyTransactionData)]:(state) => state,
+
+
+
+  [pending(FetchBuyTransactionGasCost)]:(state) => state,
   [fulfilled(FetchBuyTransactionGasCost)]: (state, {payload}) =>
     state
-    .update('transactionFee', () => payload)
-  ,
-  [fulfilled(FetchSellTransactionData)]: (state, {payload}) =>
-      state
-      .updateIn(['deposit','amount'], () => payload)
-      .update('tokenPrice', () => web3.toBigNumber(1).div(payload)) // TODO: Replace "1" to buyAmount
-  ,
+    .update('transactionFee',
+        () => web3.toBigNumber(web3.fromWei(payload, 'ether')).toFormat(5)
+    ),
+  [rejected(FetchBuyTransactionGasCost)]:(state) => state,
+
+
+
+  [pending(FetchSellTransactionData)]:(state) => state,
+  [fulfilled(FetchSellTransactionData)]: (state, {payload}) => {
+    return state
+      .setIn(['deposit','amount'], payload)
+      .update(
+        'tokenPrice', () => web3.toBigNumber(0x1).div(1).toFormat(5)
+      )
+  },
+  [rejected(FetchSellTransactionData)]:(state) => state,
+
+
+
+
   [SetTokenExchangeRate]: (state) => state
 
 }, initialState);

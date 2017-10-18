@@ -27,6 +27,16 @@ const defaultProps = {};
 
 class TokenPicker extends PureComponent {
 
+  constructor(props) {
+    super(props);
+    this.onToggleOpen = this.onToggleOpen.bind(this);
+  }
+
+  onToggleOpen() {
+
+    this.props.onToggleOpen();
+  }
+
   tokens() {
 
     const {
@@ -53,11 +63,11 @@ class TokenPicker extends PureComponent {
     )
   }
 
+
   render() {
-    const { onToggleOpen } = this.props;
     return (
       <div className={'TokenPicker'}>
-        <CloseButton onClick={onToggleOpen}/>
+        <CloseButton onClick={this.onToggleOpen}/>
         <div className='Tokens'>{this.tokens()}</div>
       </div>
     );

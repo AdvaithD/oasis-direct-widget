@@ -52,6 +52,16 @@ const depositTokenAmount = createSelector(
     state,
     (s) => s.getIn(['deposit', 'amount'])
 );
+const depositTokenAmountErrors = createSelector(
+    state,
+    (s) => s.getIn(['deposit', 'errors'])
+);
+
+const isDepositAmountControlDisabled = createSelector(
+    state,
+    (s) => s.getIn(['deposit', 'disableControl'])
+);
+
 
 const buyTokenValue = createSelector(
     state,
@@ -63,12 +73,36 @@ const buyTokenAmount = createSelector(
     (s) => s.getIn(['buy', 'amount'])
 );
 
+const buyTokenAmountErrors = createSelector(
+    state,
+    (s) => s.getIn(['buy', 'errors'])
+);
+
+const isBuyAmountControlDisabled = createSelector(
+    state,
+    (s) => s.getIn(['buy', 'disableControl'])
+);
+
+const depositAmountControlState = createSelector(
+  state,
+  (s) => s.get('deposit')
+);
+
+const buyAmountControlState = createSelector(
+    state,
+    (s) => s.get('buy')
+);
+
 /**
  *
  * Trade details selectors
  *
  */
 
+const activeTransactionType =  createSelector(
+    state,
+    s => s.getIn(['transaction', 'type'])
+)
 
 const transactionFee = createSelector(
     state,
@@ -117,7 +151,7 @@ const transactionInfo = createSelector(
 const canStartTransaction = createSelector(
     buyTokenAmount,
     depositTokenAmount,
-    (bta, dta) => !!(dta && bta)
+    (bta, dta) => Number(dta) > 0 && Number(bta) > 0
 );
 
 const isTokenPickerOpen = createSelector(
@@ -129,6 +163,7 @@ const isTokenPickerOpen = createSelector(
 export default {
   state,
   activeStep,
+  activeTransactionType,
 
   isOpen,
   selectedToken,
@@ -136,10 +171,15 @@ export default {
 
   items,
   depositTokenValue,
-  buyTokenValue,
+  depositTokenAmountErrors,
   depositTokenAmount,
+  isDepositAmountControlDisabled,
   buyTokenAmount,
+  buyTokenValue,
+  buyTokenAmountErrors,
+  isBuyAmountControlDisabled,
   activeControlDisabledTokens,
+
 
   transactionFee,
   tokenPrice,

@@ -32,4 +32,30 @@
     -webkit-appearance: none;
     margin: 0;
   }
+
+  .Errors {
+    visibility: hidden;
+    text-align: center;
+    height: 20px;
+    border: 1px solid #FF928D;
+    padding: 3px 0;
+    font-size: 12px;
+    letter-spacing: 1px;
+    border-bottom: none;
+    color: #FF928D;
+    background-color: #FFE7E6;
+  }
+  &.TakerTokenAmount--hasErrors {
+    border-color: #FF928D !important;
+    input {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      border-color: #FF928D !important;
+    }
+
+
+    .Errors {
+      visibility: visible;
+    }
+  }
 }

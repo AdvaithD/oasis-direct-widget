@@ -1,13 +1,13 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 
-import web3, {initWeb3} from  '../web3';
+import web3, { initWeb3 } from  '../web3';
 import ReactNotify from '../notify';
-import {etherscanTx, loadObject} from '../helpers';
+import { etherscanTx, loadObject } from '../helpers';
 // import logo from '../makerdao.svg';
 import './App.css';
 import WizardWrapper from "../containers/Wizard";
-import './Frame.scss'
-import './Connectionless.scss'
+import './Frame.scss';
+import './Connectionless.scss';
 
 const settings = require('../settings');
 // const dstoken = require('../abi/dstoken');
@@ -15,7 +15,7 @@ const settings = require('../settings');
 // const dsvalue = require('../abi/dsvalue');
 const dsproxyfactory = require('../abi/dsproxyfactory');
 
-const Frame = ({children}) => (
+const Frame = ({ children }) => (
   <div className='Frame'>
     {children}
   </div>
@@ -76,6 +76,18 @@ const NoConnection = () => (
   </div>
 );
 
+/**
+ * @param previousNetworkState
+ * @param state
+ * @param props
+ */
+function syncNetworkAction (previousNetworkState, state, props) {
+  const { onSyncNetworkData } = props;
+  if(JSON.stringify(previousNetworkState) !== JSON.stringify(state.network)) {
+    onSyncNetworkData(state.network);
+  }
+}
+
 
 class App extends Component {
   constructor(props, context) {
@@ -120,10 +132,14 @@ class App extends Component {
             console.debug('YIKES! getBlock returned undefined!');
           }
           if (res.number >= this.state.network.latestBlock) {
-            const networkState = {...this.state.network};
+            const previousNetworkState = this.state.network;
+            const networkState = { ...this.state.network };
             networkState.latestBlock = res.number;
             networkState.outOfSync = e != null || ((new Date().getTime() / 1000) - res.timestamp) > 600;
-            this.setState({network: networkState});
+            this.setState({ network: networkState });
+
+            syncNetworkAction(previousNetworkState, this.state, this.props);
+
           } else {
             // XXX MetaMask frequently returns old blocks
             // https://github.com/MetaMask/metamask-plugin/issues/504
@@ -157,35 +173,37 @@ class App extends Component {
             }
           });
         } else {
-          const networkState = {...this.state.network};
+          const networkState = { ...this.state.network };
           networkState.isConnected = isConnected;
           networkState.network = false;
           networkState.latestBlock = 0;
-          this.setState({network: networkState});
+          this.setState({ network: networkState });
         }
       }
     });
   }
 
   initNetwork = (newNetwork) => {
-    const networkState = {...this.state.network};
+    const networkState = { ...this.state.network };
     networkState.network = newNetwork;
     networkState.isConnected = true;
     networkState.latestBlock = 0;
-    this.setState({network: networkState}, () => {
+    this.setState({ network: networkState }, () => {
       this.checkAccounts();
     });
+
+    this.props.onInitNetwork(this.state.network);
   }
 
   checkAccounts = () => {
     web3.eth.getAccounts((error, accounts) => {
       if (!error) {
-        const networkState = {...this.state.network};
+        const networkState = { ...this.state.network };
         networkState.accounts = accounts;
         const oldDefaultAccount = networkState.defaultAccount;
         networkState.defaultAccount = accounts[0];
         web3.eth.defaultAccount = networkState.defaultAccount;
-        this.setState({network: networkState}, () => {
+        this.setState({ network: networkState }, () => {
           if (oldDefaultAccount !== networkState.defaultAccount) {
             this.initContracts();
           }
@@ -235,11 +253,11 @@ class App extends Component {
           this.setState((prevState, props) => {
             const system = {...prevState.system};
             system.proxy = proxy;
-            return {system};
+            return { system };
           });
           // window.proxyObj = this.proxyObj = loadObject(dsproxy.abi, proxy);
         } else {
-
+          
         }
         this.setUpAddress('otc');
         this.setUpAddress('tub');
@@ -261,9 +279,9 @@ class App extends Component {
   getAccountBalance = () => {
     if (web3.isAddress(this.state.profile.activeProfile)) {
       web3.eth.getBalance(this.state.profile.activeProfile, (e, r) => {
-        const profile = {...this.state.profile};
+        const profile = { ...this.state.profile };
         profile.accountBalance = r;
-        this.setState({profile});
+        this.setState({ profile });
       });
     }
   }
@@ -271,7 +289,7 @@ class App extends Component {
   getProxyAddress = () => {
     const p = new Promise((resolve, reject) => {
       const addrs = settings.chain[this.state.network.network];
-      this.proxyFactoryObj.Created({sender: this.state.network.defaultAccount}, {fromBlock: addrs.fromBlock}).get((e, r) => {
+      this.proxyFactoryObj.Created({ sender: this.state.network.defaultAccount }, { fromBlock: addrs.fromBlock }).get((e, r) => {
         if (!e) {
           resolve(r);
         } else {
@@ -286,7 +304,7 @@ class App extends Component {
     const addr = settings.chain[this.state.network.network][contract];
     this.setState((prevState, props) => {
       const returnObj = {};
-      returnObj[contract] = {address: addr};
+      returnObj[contract] = { address: addr };
       return returnObj;
     });
   }
@@ -371,14 +389,14 @@ class App extends Component {
 
   // Transactions
   checkPendingTransactions = () => {
-    const transactions = {...this.state.transactions};
+    const transactions = { ...this.state.transactions };
     Object.keys(transactions).map(tx => {
       if (transactions[tx].pending) {
         web3.eth.getTransactionReceipt(tx, (e, r) => {
           if (!e && r !== null) {
             if (r.logs.length === 0) {
               this.logTransactionFailed(tx);
-            } else if (r.blockNumber) {
+            } else if (r.blockNumber)  {
               this.logTransactionConfirmed(tx);
             }
           }
@@ -390,21 +408,21 @@ class App extends Component {
 
   logPendingTransaction = (tx, title, callback = {}) => {
     const msgTemp = 'Transaction TX was created. Waiting for confirmation...';
-    const transactions = {...this.state.transactions};
-    transactions[tx] = {pending: true, title, callback}
-    this.setState({transactions});
+    const transactions = { ...this.state.transactions };
+    transactions[tx] = { pending: true, title, callback }
+    this.setState({ transactions });
     console.log(msgTemp.replace('TX', tx))
-    this.refs.notificator.info(tx, title, etherscanTx(this.state.network.network, msgTemp.replace('TX', `${tx.substring(0, 10)}...`), tx), false);
+    this.refs.notificator.info(tx, title, etherscanTx(this.state.network.network, msgTemp.replace('TX', `${tx.substring(0,10)}...`), tx), false);
   }
 
   logTransactionConfirmed = (tx) => {
     const msgTemp = 'Transaction TX was confirmed.';
-    const transactions = {...this.state.transactions};
+    const transactions = { ...this.state.transactions };
     if (transactions[tx]) {
       transactions[tx].pending = false;
-      this.setState({transactions});
+      this.setState({ transactions });
 
-      this.refs.notificator.success(tx, transactions[tx].title, etherscanTx(this.state.network.network, msgTemp.replace('TX', `${tx.substring(0, 10)}...`), tx), 4000);
+      this.refs.notificator.success(tx, transactions[tx].title, etherscanTx(this.state.network.network, msgTemp.replace('TX', `${tx.substring(0,10)}...`), tx), 4000);
       const c = transactions[tx].callback;
       if (c.method) {
       }
@@ -413,11 +431,11 @@ class App extends Component {
 
   logTransactionFailed = (tx) => {
     const msgTemp = 'Transaction TX failed.';
-    const transactions = {...this.state.transactions};
+    const transactions = { ...this.state.transactions };
     if (transactions[tx]) {
       transactions[tx].pending = false;
-      this.setState({transactions});
-      this.refs.notificator.error(tx, transactions[tx].title, msgTemp.replace('TX', `${tx.substring(0, 10)}...`), 4000);
+      this.setState({ transactions });
+      this.refs.notificator.error(tx, transactions[tx].title, msgTemp.replace('TX', `${tx.substring(0,10)}...`), 4000);
     }
   }
   //
@@ -425,32 +443,32 @@ class App extends Component {
   // Actions
   changeType = (type) => {
     this.setState((prevState, props) => {
-      const system = {...prevState.system};
+      const system = { ...prevState.system };
       system.type = type;
-      return {system};
+      return { system };
     });
   }
-  frame
+frame
   goToDetailsBasicStep = (from, to) => {
     this.setState((prevState, props) => {
-      const system = {...prevState.system};
+      const system = { ...prevState.system };
       system.step = 2;
       system.from = from;
       system.to = to;
-      return {system};
+      return { system };
     });
   }
 
   goToDetailsMarginStep = (leverage) => {
     this.setState((prevState, props) => {
-      const system = {...prevState.system};
+      const system = { ...prevState.system };
       system.step = 2;
       system.leverage = leverage;
-      return {system};
+      return { system };
     });
   }
 
-  calculateBuyAmount = (from, to, amount) => {
+  // calculateBuyAmount = (from, to, amount) => {
     // this.proxyObj.execute.call(proxyActions.trade,
     //                            `${this.methodSig('sellAll(address,address,address,uint256)')}${addressToBytes32(this.state.otc.address, false)}${addressToBytes32(this.state.tokens[to].address, false)}${addressToBytes32(this.state.tokens[from].address, false)}${toBytes32(web3.toWei(amount), false)}`,
     //                            (e, r) => {
@@ -462,44 +480,15 @@ class App extends Component {
     //                               });
     //                              }
     //                            });
-  }
-
-  // renderMain = () => {
-  //   switch (this.state.system.step) {
-  //     case 1:
-  //       return (
-  //         <SetAssets
-  //           type={ this.state.system.type }
-  //           changeType={ this.changeType }
-  //           goToDetailsBasicStep={ this.goToDetailsBasicStep } />
-  //       );
-  //     case 2:
-  //       return (
-  //         <SetDetailsBasic
-  //           from={ this.state.system.from }
-  //           to={ this.state.system.to }
-  //           calculateBuyAmount={ this.calculateBuyAmount }
-  //           amountBuy = { this.state.system.amountBuy }
-  //         />
-  //       );
-  //     case 3:
-  //       return (
-  //         <TradeBasic />
-  //       );
-  //     default:
-  //   }
   // }
 
-  componentWillUpdate(nextProps, nextState) {
-  }
-
   render() {
-    if (this.state.network.isConnected) {
-      const {system, network} = this.state;
+    if(this.state.network.isConnected) {
+      const { system, network }  = this.state;
       return (
-        <Frame>
-          <WizardWrapper appState={{system, network}}/>
-        </Frame>
+          <Frame>
+            <WizardWrapper appState={{system, network}}/>
+          </Frame>
       );
     }
     return (<NoConnection />);

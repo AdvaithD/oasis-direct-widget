@@ -12,7 +12,7 @@ import {Sai} from "./tokens/Sai";
 
 
 const tags = {
-  ETH: (<Ether/>),
+  WETH: (<Ether/>),
   MKR: (<Maker/>),
   REP: (<Augur/>),
   GNT: (<Golem/>),

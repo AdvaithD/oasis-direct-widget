@@ -26,7 +26,9 @@ const propTypes = PropTypes && {
   buyTokenValue: PropTypes.string.isRequired,
   disabled: PropTypes.bool,
   depositTokenAmount: PropTypes.number,
-  buyTokenAmount: PropTypes.number
+  buyTokenAmount: PropTypes.number,
+  buyAmountErrors: PropTypes.object,
+  depositAmountErrors: PropTypes.object
 };
 const defaultProps = {};
 
@@ -42,7 +44,12 @@ class TradeDetails extends PureComponent {
       disabled,
       depositTokenAmount,
       buyTokenAmount,
-      appState
+      appState,
+      buyAmountErrors,
+      depositAmountErrors,
+      isBuyAmountControlDisabled,
+      isDepositAmountControlDisabled
+
     } = this.props;
 
     const selectedTokens = {deposit: depositTokenValue, buy: buyTokenValue};
@@ -64,9 +71,11 @@ class TradeDetails extends PureComponent {
                 <AmountInput
                   appState={appState}
                   selectedTokens={selectedTokens}
-                  value={depositTokenAmount !== 0 ? depositTokenAmount !== '0x' ? formatNumber(depositTokenAmount) : '' : ''}
+                  errors={depositAmountErrors}
+                  value={depositTokenAmount}
                   onChange={onDepositAmountChange}
                   name="deposit"
+                  controlDisabled={isDepositAmountControlDisabled}
                   placeHolder="Deposit Amount"
                 />
               </div>
@@ -82,9 +91,11 @@ class TradeDetails extends PureComponent {
                 <AmountInput
                   appState={appState}
                   selectedTokens={selectedTokens}
-                  value={buyTokenAmount !== 0 ? buyTokenAmount !== '0x' ? formatNumber(buyTokenAmount) : '' : ''}
+                  errors={buyAmountErrors}
+                  value={buyTokenAmount}
                   onChange={onBuyAmountChange}
                   name="buy"
+                  controlDisabled={isBuyAmountControlDisabled}
                   placeHolder="Receive Amount"
                 />
               </div>
