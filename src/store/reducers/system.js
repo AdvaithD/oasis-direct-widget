@@ -15,8 +15,8 @@ const dsproxy = require('../../abi/dsproxy');
 
 
 export const constants = Object.freeze({
-  TRANSACTION_TYPE_BUY:  'TRANSACTION_TYPE_BUY',
-  TRANSACTION_TYPE_SELL: 'TRANSACTION_TYPE_SELL'
+  TRANSACTION_TYPE_BUY_ALL:  'TRANSACTION_TYPE_BUY_ALL',
+  TRANSACTION_TYPE_SELL_ALL: 'TRANSACTION_TYPE_SELL_ALL'
 });
 
 /**
@@ -138,7 +138,7 @@ function DepositAmountChanged(
 ) {
 
   return async (dispatch) => {
-    console.log({value});
+    // console.log({value});
     if(!isNaN(parseFloat(value)) && Number(value) >= 0) {
       const bnValue = new BigNumber(value);
       dispatch({
@@ -175,7 +175,7 @@ function DepositAmountChanged(
                   appState.system.proxy
               )
           );
-          dispatch(SetTransactionType(constants.TRANSACTION_TYPE_BUY))
+          dispatch(SetTransactionType(constants.TRANSACTION_TYPE_SELL_ALL))
         }
 
       } else {
@@ -211,7 +211,7 @@ function BuyAmountChanged(buyToken, receiveToken, value, appState, hasErrors) {
                   appState.system.proxy
               )
           );
-          dispatch(SetTransactionType(constants.TRANSACTION_TYPE_BUY))
+          dispatch(SetTransactionType(constants.TRANSACTION_TYPE_BUY_ALL))
 
       } else {
         dispatch(ResetInfoBox());
@@ -351,7 +351,7 @@ const FetchBuyTransactionData = createAction(
                 if(r === '0x') {
                   reject({error: 'FETCH_BUY_TRANSACTION_DATA:REJECTED' });
                 } else {
-                  console.log('FetchBuyTransactionData resolved value', r);
+                //   console.log('FetchBuyTransactionData resolved value', r);
                   resolve(web3.fromWei(web3.toBigNumber(r), 'ether'));
                 }
               } else {
@@ -689,7 +689,13 @@ const reducer = handleActions({
   [fulfilled(FetchBuyTransactionGasCost)]: (state, {payload}) =>
     state
     .update('transactionFee',
-        () => web3.toBigNumber(web3.fromWei(payload, 'ether')).toFormat(5)
+        // async () => {
+        () => {
+          // const gasPrice = await promisify(web3.eth.getGasPrice)();
+          // console.log(gasPrice.valueOf());
+          const gasPrice = 1000000000;
+          return web3.toBigNumber(web3.fromWei(payload, 'ether')).times(gasPrice).toFormat(5)
+        }
     ),
   [rejected(FetchBuyTransactionGasCost)]:(state) => state,
 
