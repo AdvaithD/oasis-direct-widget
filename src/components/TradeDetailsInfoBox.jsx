@@ -43,7 +43,7 @@ class TradeDetailsInfoBox extends PureComponent {
         </span>
         <span>
           <span className="Label">Price </span>
-          <span className='Value'>{formatNumber(tokenPrice)} {tokenPriceUnitSymbol}</span>
+          <span className='Value'>{tokenPrice} {tokenPriceUnitSymbol}</span>
         </span>
         <span>
           <span className="Label">Fee </span>

@@ -1,13 +1,14 @@
 import { createStore, applyMiddleware, compose } from 'redux';
 import thunk from 'redux-thunk';
 import promiseMiddleware from 'redux-promise-middleware';
+import createDebounce from 'redux-debounced';
 
 import Immutable from 'immutable';
 import reducers from './reducers';
 
 
 function initStore(defaultState = Immutable.Map()) {
-  let middleware = applyMiddleware(thunk, promiseMiddleware());
+  let middleware = applyMiddleware(createDebounce(), thunk, promiseMiddleware());
   if (window.devToolsExtension) {
     middleware = compose(
       middleware,

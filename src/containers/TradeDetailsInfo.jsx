@@ -14,6 +14,7 @@ const propTypes = PropTypes && {
 export class TradeDetailsInfoWrapper extends PureComponent {
   render() {
     const { transactionInfo } = this.props;
+    console.log({transactionInfo})
     return (
         (<TradeDetailsInfoBox transactionInfo={transactionInfo}/>)
     );

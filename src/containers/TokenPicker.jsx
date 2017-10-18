@@ -29,7 +29,7 @@ export class TokenPickerWrapper extends PureComponent {
                 activeTokenControlName={activeTokenControlName}
                 tokens={tokens}
                 selectedToken={selectedToken}
-                onTokenSelected={actions.TokenSelected}
+                onTokenSelected={actions.ChangeSelectedToken}
                 onToggleOpen={actions.ToggleOpen}
             />
         ): null
@@ -49,7 +49,7 @@ export function mapStateToProps(state) {
 export function mapDispatchToProps(dispatch) {
   const actions = {
       ...actionHandler.actions,
-      TokenSelected: actionHandler.actions.TokenSelected
+      TokenSelected: actionHandler.actions.ChangeSelectedToken
   };
   return { actions: bindActionCreators(actions, dispatch) };
 }
