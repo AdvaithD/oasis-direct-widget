@@ -6,7 +6,8 @@ import { etherscanTx, loadObject } from '../helpers';
 // import logo from '../makerdao.svg';
 import './App.css';
 import WizardWrapper from "../containers/Wizard";
-import './Frame.scss'
+import './Frame.scss';
+import './Connectionless.scss';
 
 const settings = require('../settings');
 // const dstoken = require('../abi/dstoken');
