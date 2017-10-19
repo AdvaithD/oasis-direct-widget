@@ -316,7 +316,6 @@ const ResetInfoBox = createAction(
     RESET_INFO_BOX, () => null
 );
 
-
 const SetTransactionType = createAction(
     SET_TRANSACTION_TYPE, (transactionType) => transactionType
 );
@@ -340,7 +339,6 @@ const SetTransactionMarket = createAction(
 const SetTransactionGasPrice = createAction(
     SET_TRANSACTION_GAS_COST, (data) => data
 );
-
 
 const FetchBuyTransactionData = createAction(
   FETCH_BUY_TRANSACTION_DATA, async (sellToken, receiveToken, amount, network, proxyAddress) =>
@@ -435,6 +433,48 @@ const FetchSellTransactionData = createAction(
 const SetTokenExchangeRate = createAction(
   SET_TOKEN_EXCHANGE_RATE,
   () => null
+);
+
+/**
+ * Sell / Buy transactions actions
+ *
+ */
+
+const SELL_ALL_AMOUNT_PAY_ETH = 'SELL_BUY/SELL_ALL_AMOUNT_PAY_ETH';
+const BUY_ALL_AMOUNT_PAY_ETH  = 'SELL_BUY/BUY_ALL_AMOUNT_PAY_ETH';
+const SELL_ALL_AMOUNT = 'SELL_BUY/SELL_ALL_AMOUNT';
+const BUY_ALL_AMOUNT = 'SELL_BUY/BUY_ALL_AMOUNT';
+const SELL_ALL_AMOUNT_BUY_ETH = 'SELL_BUY/SELL_ALL_AMOUNT_BUY_ETH';
+const BUY_ALL_AMOUNT_BUY_ETH  = 'SELL_BUY/BUY_ALL_AMOUNT_BUY_ETH';
+
+const SellAllAmountPayEth = createAction(
+    SELL_ALL_AMOUNT_PAY_ETH,
+    () => null
+);
+
+const BuyAllAmountPayEth = createAction(
+    BUY_ALL_AMOUNT_PAY_ETH,
+    () => null
+);
+
+const SellAllAmount = createAction(
+    SELL_ALL_AMOUNT,
+    () => null
+);
+
+const BuyAllAmount = createAction(
+    BUY_ALL_AMOUNT,
+    () => null
+);
+
+const SellAllAmountBuyEth = createAction(
+    SELL_ALL_AMOUNT_BUY_ETH,
+    () => null
+);
+
+const BuyAllAmountBuyEth = createAction(
+    BUY_ALL_AMOUNT_BUY_ETH,
+    () => null
 );
 
 
@@ -543,6 +583,7 @@ const initialState = Immutable.fromJS(
       market: 'Oasisdex',
 
       transaction: {
+        list: [],
         gasPrice: {
           last_updated: null,
           value: null
@@ -555,9 +596,29 @@ const initialState = Immutable.fromJS(
 
 
 const reducer = handleActions({
+  [SellAllAmountPayEth]:(state) =>
+      state
+      .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_SELL_ALL),
+  [BuyAllAmountPayEth]:(state) =>
+      state
+      .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_BUY_ALL),
+  [SellAllAmount]:(state) =>
+      state
+      .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_SELL_ALL),
+  [BuyAllAmount]:(state) =>
+      state
+      .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_BUY_ALL),
+  [SellAllAmountBuyEth]:(state) =>
+      state
+      .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_SELL_ALL),
+  [BuyAllAmountBuyEth]:(state) =>
+      state
+      .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_BUY_ALL),
+
   /**
    * System handlers
    */
+
   [InitNetwork]: (state) => state,
   [StartTransaction]: (state) => state.set('step', 2),
   [SyncNetworkData]: (state, {payload}) =>
