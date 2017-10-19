@@ -38,10 +38,10 @@ const SYNC_DEFAULT_ACCOUNT_ETHER_BALANCE =
     'SYSTEM/SYNC_DEFAULT_ACCOUNT_ETHER_BALANCE';
 
 
-
 const StartTransaction = createAction(
     START_TRANSACTION, (data) => data
 );
+
 
 const InitNetwork = createAction(
     INIT_NETWORK, (data) => data
@@ -115,7 +115,6 @@ const BUY_AMOUNT_RESET_ERRORS = 'TOKENS/BUY_AMOUNT_RESET_ERRORS';
 const BUY_AMOUNT_SET_ENABLED = 'TOKENS/BUY_AMOUNT_SET_ENABLED';
 const BUY_AMOUNT_SET_DISABLED = 'TOKENS/BUY_AMOUNT_SET_DISABLED';
 
-
 const TokenSelected = createAction(
   TOKEN_SELECTED,
   (v) => v,
@@ -166,6 +165,8 @@ function DepositAmountChanged(
                   appState.system.proxy
               )
           );
+          const gasPrice = await promisify(web3.eth.getGasPrice).call();
+          dispatch(SetTransactionGasPrice(gasPrice.valueOf()));
           dispatch(
               FetchBuyTransactionGasCost(
                   sellToken,
@@ -297,6 +298,8 @@ const  BuyAmountSetEnabled = createAction(
 const SET_TRANSACTION_TYPE = 'TRADE_DETAILS/SET_TRANSACTION_TYPE';
 const RESET_TRANSACTION_TYPE = 'TRADE_DETAILS/RESET_TRANSACTION_TYPE';
 
+const SET_TRANSACTION_GAS_COST =  'TOKEN/SET_TRANSACTION_GAS_COST';
+
 const SET_TRANSACTION_FEE = 'TRADE_DETAILS/SET_TRANSACTION_FEE';
 const SET_TOKEN_UNIT_SYMBOL = 'TRADE_DETAILS/SET_TOKEN_UNIT_SYMBOL';
 const SET_TRANSACTION_MARKET = 'TRADE_DETAILS/SET_TRANSACTION_MARKET';
@@ -332,6 +335,10 @@ const SetTokenPriceUnitSymbol = createAction(
 
 const SetTransactionMarket = createAction(
     SET_TRANSACTION_MARKET, (transactionMarket) => transactionMarket
+);
+
+const SetTransactionGasPrice = createAction(
+    SET_TRANSACTION_GAS_COST, (data) => data
 );
 
 
@@ -536,6 +543,10 @@ const initialState = Immutable.fromJS(
       market: 'Oasisdex',
 
       transaction: {
+        gasPrice: {
+          last_updated: null,
+          value: null
+        },
         type: null,
         status: null
       }
@@ -649,6 +660,11 @@ const reducer = handleActions({
    * Trade details handlers
    */
 
+  [SetTransactionGasPrice]: (state, {payload}) =>
+      state
+      .setIn(['transaction','gasPrice','value'], payload)
+      .setIn(['transaction','gasPrice','last_updated'], Date.now())
+  ,
   [SetTransactionType]: (state, {payload}) =>
       state.setIn(['transaction', 'type'], payload),
   [ResetTransactionType]: (state, {payload}) =>
@@ -689,12 +705,12 @@ const reducer = handleActions({
   [fulfilled(FetchBuyTransactionGasCost)]: (state, {payload}) =>
     state
     .update('transactionFee',
-        // async () => {
         () => {
-          // const gasPrice = await promisify(web3.eth.getGasPrice)();
-          // console.log(gasPrice.valueOf());
-          const gasPrice = 1000000000;
-          return web3.toBigNumber(web3.fromWei(payload, 'ether')).times(gasPrice).toFormat(5)
+          const gasPrice = state.getIn(['transaction','gasPrice', 'value']);
+          return web3
+            .toBigNumber(web3
+            .fromWei(payload, 'ether'))
+            .times(gasPrice).toFormat(5)
         }
     ),
   [rejected(FetchBuyTransactionGasCost)]:(state) => state,
@@ -710,8 +726,6 @@ const reducer = handleActions({
       )
   },
   [rejected(FetchSellTransactionData)]:(state) => state,
-
-
 
 
   [SetTokenExchangeRate]: (state) => state
