@@ -14,7 +14,9 @@ class AccountLocked extends PureComponent {
   render() {
     return (
       <div className={'AccountLocked'}>
-        Account is locked
+        <h3 className="Heading">Metamask Account Locked</h3>
+        <img type="svg" height="124" width="112" src="/assets/od_metamask_big.svg"/>
+        <span> Unlock your Account on the Extension </span>
       </div>
     );
   }

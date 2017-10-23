@@ -35,7 +35,7 @@ export class WizardWrapper extends PureComponent {
 
   render() {
     return (
-        <div>
+        <div style={{height : "100%"}}>
           {this.content()}
         </div>
     );
