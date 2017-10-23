@@ -62,7 +62,6 @@ class AmountInput extends PureComponent {
       if(!isNaN(controlValueNumber) && controlValueNumber > 0) {
         this.inputRef.value = web3.toBigNumber(this.inputRef.value).toFormat(5)
       }
-
     }
   }
 

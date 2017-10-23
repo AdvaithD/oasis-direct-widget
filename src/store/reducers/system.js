@@ -685,7 +685,7 @@ const initialState = Immutable.fromJS(
       /**
        * System
        */
-      step: 2,
+      step: 1,
       type: 'basic',
 
       /**
@@ -709,21 +709,25 @@ const initialState = Immutable.fromJS(
 
       deposit: {
         amount: null,
-        formattedAmount: null,
         disableControl: false,
         disabled: [
           'MKR', 'REP', 'GNT', 'DGX','SAI'
         ],
-        errors: {overTheLimit: false, valueToSmall: false},
+        errors: {
+          overTheLimit: false,
+          valueToSmall: false
+        },
         value: 'WETH',
       },
 
       buy: {
         amount: null,
-        formattedAmount: null,
         disableControl: false,
         disabled: ['WETH'],
-        errors: {overTheLimit: false, valueTooSmall: false},
+        errors: {
+          overTheLimit: false,
+          valueTooSmall: false
+        },
         value: 'SAI',
       },
 
