@@ -176,6 +176,12 @@ const isTokenPickerOpen = createSelector(
 );
 
 
+const getSystem = createSelector(
+    state,
+    s => s.get('eth')
+);
+
+
 export default {
   state,
   activeStep,
@@ -208,5 +214,6 @@ export default {
   canStartTransaction,
   transactionsList,
   tradeFinalizerData,
-  isTokenPickerOpen
+  isTokenPickerOpen,
+  getSystem
 }

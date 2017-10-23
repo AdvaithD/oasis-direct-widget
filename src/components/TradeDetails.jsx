@@ -69,7 +69,6 @@ class TradeDetails extends PureComponent {
                   tokenSymbol={depositTokenValue}
                 />
                 <AmountInput
-                  appState={appState}
                   selectedTokens={selectedTokens}
                   errors={depositAmountErrors}
                   value={depositTokenAmount}
@@ -89,7 +88,6 @@ class TradeDetails extends PureComponent {
                   tokenSymbol={buyTokenValue}
                 />
                 <AmountInput
-                  appState={appState}
                   selectedTokens={selectedTokens}
                   errors={buyAmountErrors}
                   value={buyTokenAmount}

@@ -9,6 +9,8 @@ import web3 from '../../web3';
 import {fulfilled, pending, rejected} from '../../utils/store';
 import BigNumber from 'bignumber.js';
 import promisify from '../../utils/promisify';
+import selectors from '../selectors/system';
+
 const settings =   require('../../settings');
 const dsproxy =    require('../../abi/dsproxy');
 const dstoken =    require('../../abi/dstoken');
@@ -201,12 +203,10 @@ function DepositAmountChanged(
     sellToken,
     receiveToken,
     value,
-    appState,
     hasErrors
 ) {
 
-  return async (dispatch) => {
-    // console.log({value});
+  return async (dispatch, store) => {
     if(!isNaN(parseFloat(value)) && Number(value) >= 0) {
       const bnValue = new BigNumber(value);
       dispatch({
@@ -216,12 +216,15 @@ function DepositAmountChanged(
 
       if(bnValue.toNumber() > 0) {
         // TODO rely on actual events for this account address
+        const network = selectors.getSystem(store()).get('network');
         let accountBalance = await promisify(web3.eth.getBalance)(
-            appState.network.defaultAccount
+            network.defaultAccount
         );
         if(web3.fromWei(accountBalance, 'ether').sub(bnValue) < 0) {
           dispatch(DepositAmountOverTheLimit(bnValue.toNumber()));
         } else {
+
+          const system = selectors.getSystem(store()).get('system');
 
           if(hasErrors) { dispatch(DepositAmountResetErrors()); }
           dispatch(ResetInfoBox());
@@ -230,8 +233,8 @@ function DepositAmountChanged(
                   sellToken,
                   receiveToken,
                   value,
-                  appState.network.network,
-                  appState.system.proxy
+                  network.network,
+                  system.proxy
               )
           );
           const gasPrice = await promisify(web3.eth.getGasPrice).call();
@@ -241,8 +244,8 @@ function DepositAmountChanged(
                   sellToken,
                   receiveToken,
                   value,
-                  appState.network.network,
-                  appState.system.proxy
+                  network.network,
+                  system.proxy
               )
           );
           dispatch(SetTransactionType(constants.TRANSACTION_TYPE_SELL_ALL))
@@ -258,8 +261,8 @@ function DepositAmountChanged(
 }
 
 
-function BuyAmountChanged(buyToken, receiveToken, value, appState, hasErrors) {
-  return async (dispatch) => {
+function BuyAmountChanged(buyToken, receiveToken, value, hasErrors) {
+  return async (dispatch, store) => {
     if(!isNaN(parseFloat(value)) && Number(value) >= 0) {
       const bnValue = new BigNumber(value);
       dispatch({
@@ -268,6 +271,8 @@ function BuyAmountChanged(buyToken, receiveToken, value, appState, hasErrors) {
       });
 
       if(bnValue.toNumber() > 0) {
+        const system = selectors.getSystem(store()).get('system');
+        const network = selectors.getSystem(store()).get('network');
 
         // TODO rely on actual events for this account address
           if(hasErrors) { dispatch(BuyAmountResetErrors()); }
@@ -277,8 +282,8 @@ function BuyAmountChanged(buyToken, receiveToken, value, appState, hasErrors) {
                   buyToken,
                   receiveToken,
                   value,
-                  appState.network.network,
-                  appState.system.proxy
+                  network.network,
+                  system.proxy
               )
           );
           dispatch(SetTransactionType(constants.TRANSACTION_TYPE_BUY_ALL))
@@ -677,8 +682,8 @@ const initialState = Immutable.fromJS(
        * eth related data
        */
       eth: {
-        system: null,
-        network: null,
+        system: {},
+        network: {},
         defaultAccountBalance: null
       },
 

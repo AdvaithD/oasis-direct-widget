@@ -27,6 +27,10 @@ function hasErrors(errors) {
   return Object.values(errors).some(v => v === true)
 }
 
+function hasFocus(n) {
+  return n === document.activeElement;
+}
+
 class AmountInput extends PureComponent {
   inputRef = null;
 
@@ -57,26 +61,25 @@ class AmountInput extends PureComponent {
 
         break;
     }
-    if (!this.inputRef.hasFocus) {
-      const controlValueNumber = Number(this.inputRef.value);
-      if(!isNaN(controlValueNumber) && controlValueNumber > 0) {
-        this.inputRef.value = web3.toBigNumber(this.inputRef.value).toFormat(5)
-      }
-    }
+
+
+    if (!hasFocus(this.inputRef)) { this.format(); }
   }
 
-  onBlur(e) {
-    const { placeHolder } = this.props;
+  format() {
     const controlValueNumber = Number(this.inputRef.value);
-    e.target.placeholder = placeHolder;
     if(!isNaN(controlValueNumber) && controlValueNumber > 0) {
       this.inputRef.value = web3.toBigNumber(this.inputRef.value).toFormat(5)
     }
   }
 
-  onFocus(e) {
-    e.target.placeholder = "";
+  onBlur(e) {
+    const { placeHolder } = this.props;
+    e.target.placeholder = placeHolder;
+    this.format();
   }
+
+  onFocus(e) { e.target.placeholder = ""; }
 
   render() {
     const {
@@ -106,6 +109,9 @@ class AmountInput extends PureComponent {
           />
         </div>
     );
+  }
+  componentDidUpdate() {
+    if(!hasFocus(this.inputRef)) { this.format() }
   }
 }
 
