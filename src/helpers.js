@@ -1,10 +1,11 @@
 import React from 'react';
 import web3 from './web3';
+import settings from './settings';
 
 
 export const WAD = web3.toBigNumber(web3.toWei(1));
 
-var padLeft = function (string, chars, sign) {
+let padLeft = function (string, chars, sign) {
   return new Array(chars - string.length + 1).join(sign ? sign : "0") + string;
 };
 
@@ -59,13 +60,12 @@ function addZero(value) {
 }
 
 export function fromRaytoWad(x) {
-  const y = web3.toBigNumber(x).div(web3.toBigNumber(10).pow(9))
-  return y;
+  return web3.toBigNumber(x).div(web3.toBigNumber(10).pow(9));
 }
 
 export function copyToClipboard(e) {
   const value = e.target.title.replace(',', '');
-  var aux = document.createElement("input");
+  let aux = document.createElement("input");
   aux.setAttribute('value', value);
   document.body.appendChild(aux);
   aux.select();
@@ -95,7 +95,6 @@ function etherscanUrl(network) {
 export function etherscanAddress(network, text, address) {
   return <a href={ `${etherscanUrl(network)}/address/${address}` } target="_blank" rel="noopener noreferrer">{ text }</a>
 }
-
 export function etherscanTx(network, text, tx) {
   return <a href={ `${etherscanUrl(network)}/tx/${tx}` } target="_blank" rel="noopener noreferrer">{ text }</a>
 }
@@ -115,4 +114,22 @@ export function methodSig(method) {
 export function fromWeiToDecimal(d) {
 
   return web3.fromWei(d);
+}
+
+export function callProxyTx(type, calldata, value = 0) {
+  console.log(value.valueOf());
+  console.log('proxyObj', window.proxyObj);
+  return new Promise((resolve, reject) => {
+    window.proxyObj.execute['address,bytes'][type](settings.chain[this.state.network.network].proxyContracts.oasisSai,
+        calldata,
+        { value },
+        (e, r) => {
+          if (!e) {
+            resolve(r);
+          } else {
+            reject(e);
+          }
+        }
+    );
+  });
 }

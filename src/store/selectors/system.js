@@ -85,7 +85,7 @@ const isBuyAmountControlDisabled = createSelector(
 
 const depositAmountControlState = createSelector(
   state,
-  (s) => s.get('deposit')
+  (s) => s.get('deposit'),
 );
 
 const buyAmountControlState = createSelector(
@@ -102,7 +102,7 @@ const buyAmountControlState = createSelector(
 const activeTransactionType =  createSelector(
     state,
     s => s.getIn(['transaction', 'type'])
-)
+);
 
 const transactionFee = createSelector(
     state,
@@ -173,6 +173,8 @@ export default {
   depositTokenValue,
   depositTokenAmountErrors,
   depositTokenAmount,
+  depositAmountControlState,
+  buyAmountControlState,
   isDepositAmountControlDisabled,
   buyTokenAmount,
   buyTokenValue,

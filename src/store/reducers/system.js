@@ -9,9 +9,10 @@ import web3 from '../../web3';
 import {fulfilled, pending, rejected} from '../../utils/store';
 import BigNumber from 'bignumber.js';
 import promisify from '../../utils/promisify';
-const settings = require('../../settings');
-const dsproxy = require('../../abi/dsproxy');
-
+const settings =   require('../../settings');
+const dsproxy =    require('../../abi/dsproxy');
+const dstoken =    require('../../abi/dstoken');
+const dsethtoken = require('../../abi/dsethtoken');
 
 
 export const constants = Object.freeze({
@@ -29,6 +30,9 @@ export const constants = Object.freeze({
  * System actions
  */
 
+const SET_USER_ACCOUNT_PROXY_CONTRACT_ADDRESS =
+    'SYSTEM/SET_USER_ACCOUNT_PROXY_CONTRACT_ADDRESS';
+
 const START_TRANSACTION = 'SYSTEM/START_TRANSACTION';
 const INIT_NETWORK = 'SYSTEM/INIT_NETWORK';
 
@@ -37,6 +41,71 @@ const SYNC_SYSTEM_DATA =  'SYSTEM/SYNC_SYSTEM_DATA';
 const SYNC_DEFAULT_ACCOUNT_ETHER_BALANCE =
     'SYSTEM/SYNC_DEFAULT_ACCOUNT_ETHER_BALANCE';
 
+
+const GetUserAccountsProxyContractAddresses = () => async (dispatch, store) => {
+  const setUpAddress = (contract) => {
+    const addr = settings.chain[store.network.network][contract];
+    this.setState((prevState, props) => {
+      const returnObj = {};
+      returnObj[contract] = { address: addr };
+      return returnObj;
+    });
+  }
+
+  const setUpToken = (token) => {
+    const addrs = settings.chain[store.network.network];
+    this.setState((prevState, props) => {
+      const tokens = {...prevState.tokens};
+      const tok = {...tokens[token]};
+      tok.address = addrs[token];
+      tokens[token] = tok;
+      return { tokens };
+    }, () => {
+      window[`${token}Obj`] = this[`${token}Obj`] = loadObject(
+          token === 'weth' ? dsethtoken.abi : dstoken.abi, store.system.tokens[token].address);
+      this.getDataFromToken(token);
+      this.setFilterToken(token);
+    });
+  };
+
+  const getProxyAddress = async () =>
+      new Promise((resolve, reject) => {
+        const addrs = settings.chain[store.network.network];
+        window.proxyFactoryObj.Created(
+            {sender: store.network.defaultAccount},
+            {fromBlock: addrs.fromBlock},
+        ).get((e, r) => { if (!e) { resolve(r);} else { reject(e); } });
+      });
+
+  const dsproxyfactory = require('../../abi/dsproxyfactory');
+  const addrs = settings.chain[store.network.network];
+  window.proxyFactoryObj = loadObject(dsproxyfactory.abi, addrs.proxyFactory);
+
+  const setUpPromises = [await getProxyAddress()];
+  const r = await Promise.all(setUpPromises);
+  if (r[0].length > 0) {
+    const proxy = r[0][r[0].length - 1].args.proxy;
+    // this.setState((prevState, props) => {
+    //   const system = {...prevState.system};
+    //   system.proxy = proxy;
+    //   return { system };
+    // });
+    dispatch(SetUserAccountProxyContractAddress(proxy));
+    window.proxyObj = this.proxyObj = loadObject(dsproxy.abi, proxy);
+  } else {}
+  setUpAddress('otc');
+  setUpAddress('tub');
+  setUpToken('weth');
+  setUpToken('mkr');
+  setUpToken('sai');
+  // This is necessary to finish transactions that failed after signing
+  // this.setPendingTxInterval();
+};
+
+const SetUserAccountProxyContractAddress = createAction(
+    SET_USER_ACCOUNT_PROXY_CONTRACT_ADDRESS,
+    async (proxyAddress) => proxyAddress
+);
 
 const StartTransaction = createAction(
     START_TRANSACTION, (data) => data
@@ -449,32 +518,103 @@ const BUY_ALL_AMOUNT_BUY_ETH  = 'SELL_BUY/BUY_ALL_AMOUNT_BUY_ETH';
 
 const SellAllAmountPayEth = createAction(
     SELL_ALL_AMOUNT_PAY_ETH,
-    () => null
+    () => {
+      const
+          otcBytes32 = null,
+          fromAddrBytes32 = null,
+          toAddrBytes32 = null,
+          limit = null,
+          amount = null;
+
+      const callData =
+          `${methodSig('sellAllAmountPayEth(address,address,address,uint256)')}
+          ${otcBytes32}${fromAddrBytes32}${toAddrBytes32}${toBytes32(limit, false)}`;
+    }
 );
 
 const BuyAllAmountPayEth = createAction(
     BUY_ALL_AMOUNT_PAY_ETH,
-    () => null
+    () => {
+      const
+          otcBytes32 = null,
+          fromAddrBytes32 = null,
+          toAddrBytes32 = null,
+          limit = null,
+          amount = null;
+
+      const callData =
+          `${methodSig('buyAllAmountPayEth(address,address,uint256,address,uint256)')}
+          ${otcBytes32}${toAddrBytes32}${toBytes32(web3.toWei(amount), false)}
+          ${fromAddrBytes32}${toBytes32(limit, false)}`;
+    }
 );
 
 const SellAllAmount = createAction(
     SELL_ALL_AMOUNT,
-    () => null
+    () => {
+      const
+          otcBytes32 = null,
+          fromAddrBytes32 = null,
+          toAddrBytes32 = null,
+          limit= null,
+          amount = null;
+
+      const callData =
+          `${methodSig('sellAllAmount(address,address,uint256,address,uint256)')}
+          ${otcBytes32}${fromAddrBytes32}${toBytes32(web3.toWei(amount), false)}
+          ${toAddrBytes32}${toBytes32(limit, false)}`;
+    }
 );
 
 const BuyAllAmount = createAction(
     BUY_ALL_AMOUNT,
-    () => null
+    () => {
+      const
+          otcBytes32 = null,
+          fromAddrBytes32 = null,
+          toAddrBytes32 = null,
+          limit = null,
+          amount = null;
+
+      const callData =
+          `${methodSig('buyAllAmount(address,address,uint256,address,uint256)')}
+          ${otcBytes32}${toAddrBytes32}${toBytes32(web3.toWei(amount), false)}
+          ${fromAddrBytes32}${toBytes32(limit, false)}`;
+    }
 );
 
 const SellAllAmountBuyEth = createAction(
     SELL_ALL_AMOUNT_BUY_ETH,
-    () => null
+    () => {
+      const
+          otcBytes32 = null,
+          fromAddrBytes32 = null,
+          toAddrBytes32 = null,
+          limit = null,
+          amount = null;
+
+      const callData =
+          `${methodSig('sellAllAmountBuyEth(address,address,uint256,address,uint256)')}
+          ${otcBytes32}${fromAddrBytes32}${toBytes32(web3.toWei(amount), false)}
+          ${toAddrBytes32}${toBytes32(limit, false)}`;
+    }
 );
 
 const BuyAllAmountBuyEth = createAction(
     BUY_ALL_AMOUNT_BUY_ETH,
-    () => null
+    () => {
+      const
+          otcBytes32 = null,
+          fromAddrBytes32 = null,
+          toAddrBytes32 = null,
+          limit = null,
+          amount = null;
+
+      const callData =
+          `${methodSig('buyAllAmountBuyEth(address,address,uint256,address,uint256)')}
+          ${otcBytes32}${toAddrBytes32}${toBytes32(web3.toWei(amount), false)}
+          ${fromAddrBytes32}${toBytes32(limit, false)}`;
+    }
 );
 
 
@@ -559,7 +699,8 @@ const initialState = Immutable.fromJS(
       ],
 
       deposit: {
-        amount: 0,
+        amount: null,
+        formattedAmount: null,
         disableControl: false,
         disabled: [
           'MKR', 'REP', 'GNT', 'DGX','SAI'
@@ -569,10 +710,11 @@ const initialState = Immutable.fromJS(
       },
 
       buy: {
-        amount: 0,
+        amount: null,
+        formattedAmount: null,
         disableControl: false,
         disabled: ['WETH'],
-        errors: {overTheLimit: false, valueToSmall: false},
+        errors: {overTheLimit: false, valueTooSmall: false},
         value: 'SAI',
       },
 
@@ -596,25 +738,26 @@ const initialState = Immutable.fromJS(
 
 
 const reducer = handleActions({
-  [SellAllAmountPayEth]:(state) =>
+  [SellAllAmountPayEth]: (state) =>
       state
       .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_SELL_ALL),
-  [BuyAllAmountPayEth]:(state) =>
+  [BuyAllAmountPayEth]: (state) =>
       state
       .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_BUY_ALL),
   [SellAllAmount]:(state) =>
       state
       .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_SELL_ALL),
-  [BuyAllAmount]:(state) =>
+  [BuyAllAmount]: (state) =>
       state
       .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_BUY_ALL),
-  [SellAllAmountBuyEth]:(state) =>
+  [SellAllAmountBuyEth]: (state) =>
       state
       .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_SELL_ALL),
-  [BuyAllAmountBuyEth]:(state) =>
+  [BuyAllAmountBuyEth]: (state) =>
       state
       .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_BUY_ALL),
-
+  [SetUserAccountProxyContractAddress]: (state, {payload}) =>
+      state.setIn(payload),
   /**
    * System handlers
    */
@@ -775,7 +918,6 @@ const reducer = handleActions({
         }
     ),
   [rejected(FetchBuyTransactionGasCost)]:(state) => state,
-
 
 
   [pending(FetchSellTransactionData)]:(state) => state,

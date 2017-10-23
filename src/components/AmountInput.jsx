@@ -85,7 +85,7 @@ class AmountInput extends PureComponent {
     } = this.props;
 
     const getValue = (v) => {
-      console.log('getValue', v);
+      // console.log('getValue', v);
       return v ? v : '';
     };
     return (

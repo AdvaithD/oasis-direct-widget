@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 
+import * as dsproxy from './../abi/dsproxy';
+
 import web3, { initWeb3 } from  '../web3';
 import ReactNotify from '../notify';
 import { etherscanTx, loadObject } from '../helpers';
@@ -8,11 +10,12 @@ import './App.css';
 import WizardWrapper from "../containers/Wizard";
 import './Frame.scss';
 import './Connectionless.scss';
+import NoConnection from './NoConnection';
 
 const settings = require('../settings');
-// const dstoken = require('../abi/dstoken');
-// const dsethtoken = require('../abi/dsethtoken');
-// const dsvalue = require('../abi/dsvalue');
+const dstoken = require('../abi/dstoken');
+const dsethtoken = require('../abi/dsethtoken');
+const dsvalue = require('../abi/dsvalue');
 const dsproxyfactory = require('../abi/dsproxyfactory');
 
 const Frame = ({ children }) => (
@@ -21,60 +24,6 @@ const Frame = ({ children }) => (
   </div>
 );
 
-const NoConnection = () => (
-  <div className="Frame">
-    <div className="Connectionless">
-      <div className="Heading">
-        <h2>Not Connected to Ethereum</h2>
-      </div>
-      <div className="Content">
-        <div className="Heading">
-          <h3 >Available clients</h3>
-        </div>
-        <div className="List">
-          <ul>
-            <li>
-              <div>
-                <img type="svg" src="/assets/od_metamask.svg"/>
-              </div>
-              <div>
-                <h4 className="Heading"> Metamask </h4>
-                <span> Browser Extension</span>
-              </div>
-              <div>
-                <a href="https://metamask.io">INSTALL</a>
-              </div>
-            </li>
-            <li>
-              <div>
-                <img type="svg" src="/assets/od_mist.svg"/>
-              </div>
-              <div>
-                <h4 className="Heading"> Mist </h4>
-                <span> Ethereum Client</span>
-              </div>
-              <div>
-                <a href="https://github.com/ethereum/mist">INSTALL</a>
-              </div>
-            </li>
-            <li>
-              <div>
-                <img type="svg" src="/assets/od_parity.svg"/>
-              </div>
-              <div>
-                <h4 className="Heading"> Parity </h4>
-                <span>Ethereum client + Browser Extension</span>
-              </div>
-              <div>
-                <a href="https://parity.io/">INSTALL</a>
-              </div>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-);
 
 /**
  * @param previousNetworkState
@@ -214,7 +163,7 @@ class App extends Component {
 
   componentDidMount = () => {
     setTimeout(this.init, 500);
-  }
+  };
 
   init = () => {
     initWeb3(web3);
@@ -255,15 +204,15 @@ class App extends Component {
             system.proxy = proxy;
             return { system };
           });
-          // window.proxyObj = this.proxyObj = loadObject(dsproxy.abi, proxy);
+          window.proxyObj = this.proxyObj = loadObject(dsproxy.abi, proxy);
         } else {
           
         }
         this.setUpAddress('otc');
         this.setUpAddress('tub');
-        // this.setUpToken('weth');
-        // this.setUpToken('mkr');
-        // this.setUpToken('sai');
+        this.setUpToken('weth');
+        this.setUpToken('mkr');
+        this.setUpToken('sai');
         // This is necessary to finish transactions that failed after signing
         this.setPendingTxInterval();
       });
@@ -277,13 +226,14 @@ class App extends Component {
   }
 
   getAccountBalance = () => {
-    if (web3.isAddress(this.state.profile.activeProfile)) {
-      web3.eth.getBalance(this.state.profile.activeProfile, (e, r) => {
-        const profile = { ...this.state.profile };
-        profile.accountBalance = r;
-        this.setState({ profile });
-      });
-    }
+    console.log('call:getAccountBalance')
+    // if (web3.isAddress(this.state.profile.activeProfile)) {
+    //   // web3.eth.getBalance(this.state.profile.activeProfile, (e, r) => {
+    //     const profile = { ...this.state.profile };
+    //     profile.accountBalance = r;
+    //     this.setState({ profile });
+    //   });
+    // }
   }
 
   getProxyAddress = () => {
@@ -309,83 +259,83 @@ class App extends Component {
     });
   }
 
-  // setUpToken = (token) => {
-  //   const addrs = settings.chain[this.state.network.network];
-  //   this.setState((prevState, props) => {
-  //     const tokens = {...prevState.tokens};
-  //     const tok = {...tokens[token]};
-  //     tok.address = addrs[token];
-  //     tokens[token] = tok;
-  //     return { tokens };
-  //   }, () => {
-  //     window[`${token}Obj`] = this[`${token}Obj`] = loadObject(token === 'weth' ? dsethtoken.abi : dstoken.abi, this.state.tokens[token].address);
-  //     this.getDataFromToken(token);
-  //     this.setFilterToken(token);
-  //   });
-  // }
+  setUpToken = (token) => {
+    const addrs = settings.chain[this.state.network.network];
+    this.setState((prevState, props) => {
+      const tokens = {...prevState.tokens};
+      const tok = {...tokens[token]};
+      tok.address = addrs[token];
+      tokens[token] = tok;
+      return { tokens };
+    }, () => {
+      window[`${token}Obj`] = this[`${token}Obj`] = loadObject(token === 'weth' ? dsethtoken.abi : dstoken.abi, this.state.tokens[token].address);
+      this.getDataFromToken(token);
+      this.setFilterToken(token);
+    });
+  }
 
-  // setFilterToken = (token) => {
-  //   const filters = ['Transfer'];
+  setFilterToken = (token) => {
+    const filters = ['Transfer'];
 
-  //   if (token === 'gem') {
-  //     filters.push('Deposit');
-  //     filters.push('Withdrawal');
-  //   } else {
-  //     filters.push('Mint');
-  //     filters.push('Burn');
-  //     filters.push('Trust');
-  //   }
+    if (token === 'gem') {
+      filters.push('Deposit');
+      filters.push('Withdrawal');
+    } else {
+      filters.push('Mint');
+      filters.push('Burn');
+      filters.push('Trust');
+    }
 
-  //   for (let i = 0; i < filters.length; i++) {
-  //     const conditions = {};
-  //     if (this[`${token}Obj`][filters[i]]) {
-  //       this[`${token}Obj`][filters[i]](conditions, {}, (e, r) => {
-  //         if (!e) {
-  //           this.logTransactionConfirmed(r.transactionHash);
-  //           this.getDataFromToken(token);
-  //         }
-  //       });
-  //     }
-  //   }
-  // }
+    for (let i = 0; i < filters.length; i++) {
+      const conditions = {};
+      if (this[`${token}Obj`][filters[i]]) {
+        this[`${token}Obj`][filters[i]](conditions, {}, (e, r) => {
+          if (!e) {
+            this.logTransactionConfirmed(r.transactionHash);
+            this.getDataFromToken(token);
+          }
+        });
+      }
+    }
+  }
 
-  // getDataFromToken = (token) => {
-  //   this.getTotalSupply(token);
-  //   this.getBalanceOf(token, this.state.profile.activeProfile, 'myBalance');
-  // }
+  getDataFromToken = (token) => {
+    this.getTotalSupply(token);
+    // this.getBalanceOf(token, this.state.profile.activeProfile, 'myBalance');
+  }
 
-  // getTotalSupply = (name) => {
-  //   this[`${name}Obj`].totalSupply.call((e, r) => {
-  //     if (!e) {
-  //       this.setState((prevState, props) => {
-  //         const tokens = {...prevState.tokens};
-  //         const tok = {...tokens[name]};
-  //         tok.totalSupply = r;
-  //         tokens[name] = tok;
-  //         return { tokens };
-  //       }, () => {
-  //         if (name === 'sin') {
-  //           this.calculateSafetyAndDeficit();
-  //         }
-  //       });
-  //     }
-  //   })
-  // }
+  getTotalSupply = (name) => {
+    this[`${name}Obj`].totalSupply.call((e, r) => {
+      if (!e) {
+        this.setState((prevState, props) => {
+          const tokens = {...prevState.tokens};
+          const tok = {...tokens[name]};
+          tok.totalSupply = r;
+          tokens[name] = tok;
+          return { tokens };
+        }, () => {
+          if (name === 'sin') {
+            this.calculateSafetyAndDeficit();
+          }
+        });
+      }
+    })
+  }
 
-  // getBalanceOf = (name, address, field) => {
-  //   this[`${name}Obj`].balanceOf.call(address, (e, r) => {
-  //     if (!e) {
-  //       this.setState((prevState, props) => {
-  //         const tokens = {...prevState.tokens};
-  //         const tok = {...tokens[name]};
-  //         tok[field] = r;
-  //         tokens[name] = tok;
-  //         return { tokens };
-  //       });
-  //     }
-  //   })
-  // }
-  //
+  getBalanceOf = (name, address, field) => {
+    this[`${name}Obj`].balanceOf.call(address, (e, r) => {
+      if (!e) {
+        this.setState((prevState, props) => {
+          const tokens = {...prevState.tokens};
+          const tok = {...tokens[name]};
+          tok[field] = r;
+          tokens[name] = tok;
+          return { tokens };
+        });
+      }
+    })
+  }
+
 
   // Transactions
   checkPendingTransactions = () => {
@@ -440,34 +390,6 @@ class App extends Component {
   }
   //
 
-  // Actions
-  changeType = (type) => {
-    this.setState((prevState, props) => {
-      const system = { ...prevState.system };
-      system.type = type;
-      return { system };
-    });
-  }
-frame
-  goToDetailsBasicStep = (from, to) => {
-    this.setState((prevState, props) => {
-      const system = { ...prevState.system };
-      system.step = 2;
-      system.from = from;
-      system.to = to;
-      return { system };
-    });
-  }
-
-  goToDetailsMarginStep = (leverage) => {
-    this.setState((prevState, props) => {
-      const system = { ...prevState.system };
-      system.step = 2;
-      system.leverage = leverage;
-      return { system };
-    });
-  }
-
   // calculateBuyAmount = (from, to, amount) => {
     // this.proxyObj.execute.call(proxyActions.trade,
     //                            `${this.methodSig('sellAll(address,address,address,uint256)')}${addressToBytes32(this.state.otc.address, false)}${addressToBytes32(this.state.tokens[to].address, false)}${addressToBytes32(this.state.tokens[from].address, false)}${toBytes32(web3.toWei(amount), false)}`,
@@ -491,7 +413,7 @@ frame
           </Frame>
       );
     }
-    return (<NoConnection />);
+    return (<NoConnection/>);
   }
 }
 
