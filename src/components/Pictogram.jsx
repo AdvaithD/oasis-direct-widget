@@ -19,6 +19,7 @@ const tags = {
   DGX: (<Digix/>),
   SAI: (<Sai/>),
   trade: (<img alt="arrow" src="/assets/od-icons/od_transition_arrow.svg"/>),
+  account: (<img src="" alt="account"/>)
 };
 
 const propTypes = PropTypes && {

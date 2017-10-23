@@ -101,7 +101,7 @@ const buyAmountControlState = createSelector(
 
 const activeTransactionType =  createSelector(
     state,
-    s => s.getIn(['transaction', 'type'])
+    s => s.getIn(['transactions', 'type'])
 );
 
 const transactionFee = createSelector(
@@ -147,6 +147,22 @@ const transactionInfo = createSelector(
  *
  */
 
+const transactionsList = createSelector(
+    state,
+    (s) => s.getIn(['transactions', 'list'])
+);
+
+const tradeFinalizerData = createSelector(
+    state,
+    (s) => ({
+      fromToken: s.getIn(['deposit','value']),
+      toToken: s.getIn(['buy','value']),
+      fromAmount: s.get(['deposit', 'amount']),
+      toAmount: s.get(['buy', 'amount']),
+      tokenPrice: s.get('tokenPrice')
+    })
+);
+
 
 const canStartTransaction = createSelector(
     buyTokenAmount,
@@ -190,5 +206,7 @@ export default {
   market,
 
   canStartTransaction,
+  transactionsList,
+  tradeFinalizerData,
   isTokenPickerOpen
 }

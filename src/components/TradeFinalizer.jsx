@@ -1,6 +1,5 @@
 import React, { PureComponent } from 'react';
 import { PropTypes } from 'prop-types';
-// import ImmutablePropTypes from 'react-immutable-proptypes';
 
 import './TradeFinalizer.scss';
 import TransactionSummaryBox from "./TransactionSummaryBox";
@@ -17,42 +16,50 @@ const NeedHelpBox = () => (
   </div>
 );
 
-const TRANSACTION_TYPE_DEPOSIT = 'TRANSACTIONS/TRANSACTION_TYPE_DEPOSIT';
-const TRANSACTION_TYPE_BUY = 'TRANSACTIONS/TRANSACTION_TYPE_BUY';
-const TRANSACTION_STATUS_SIGN = 'TRANSACTIONS/TRANSACTION_STATUS_SIGN';
-const TRANSACTION_STATUS_WAITING = 'TRANSACTIONS/TRANSACTION_STATUS_WAITING';
+const CurrentEstimatedPrice = ({amount, fromToken, toToken}) => (
+    <div>
+      Current Estimated Price
+      <span className="Amount">{amount}</span>
+      <span className="FromToken">{fromToken}</span>
+      <span>/</span>
+      <span className="ToToken">{toToken}</span>
+    </div>
+);
+
+
 class TradeFinalizer extends PureComponent {
-  transactionsList = [
-    {
-      heading: 'Transaction 1',
-      type: TRANSACTION_TYPE_DEPOSIT,
-      status: TRANSACTION_STATUS_SIGN,
-      amount: 1234.12345,
-      token: 'ETH'
 
-    },
-    {
-      heading: 'Transaction 2',
-      type: TRANSACTION_TYPE_BUY,
-      status: TRANSACTION_STATUS_WAITING,
-      amount: 22324.12345,
-      token: 'ETH'
-
-    },
-
-  ];
-  transactions() {
-    return this.transactionsList.map(
-        (t, i) => (<TransactionSummaryBox key={i} {...t}/>)
-    )
+  getEstimatedPriceSection() {
+    const {
+      data
+    } = this.props;
+    return (
+        <CurrentEstimatedPrice
+            amount={data.tokenPrice}
+            fromToken={data.fromToken}
+            toToken={data.toToken}
+        />
+    );
   }
+
+  transactions() {
+    const { transactionsList } = this.props;
+    return transactionsList.map(
+        (t, i) => (<TransactionSummaryBox key={i} {...t}/>)
+    );
+  }
+
   render() {
+
     return (
       <section className={'TradeFinalizer'}>
+        <div className="EstimatedPrice">
+          {this.getEstimatedPriceSection()}
+        </div>
         <div className="Heading">
           <h3>Finalize trade</h3>
         </div>
-        <div>
+        <div className="TransactionsList">
           {this.transactions()}
         </div>
         <div className="FooterContainer">

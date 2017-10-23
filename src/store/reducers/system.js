@@ -660,6 +660,15 @@ const actions = {
  *
  */
 
+export const TRANSACTION_TYPE_CREATE_PROXY_ACC = 'TRANSACTIONS/TRANSACTION_TYPE_CREATE_PROXY_ACC';
+export const TRANSACTION_TYPE_DEPOSIT = 'TRANSACTIONS/TRANSACTION_TYPE_APPROVING';
+export const TRANSACTION_TYPE_BUY = 'TRANSACTIONS/TRANSACTION_TYPE_BUY';
+
+export const TRANSACTION_STATUS_SIGNED = 'TRANSACTIONS/TRANSACTION_STATUS_SIGNED';
+export const TRANSACTION_STATUS_WAITING = 'TRANSACTIONS/TRANSACTION_STATUS_WAITING';
+export const TRANSACTION_STATUS_PENDING = 'TRANSACTIONS/TRANSACTION_STATUS_PENDING';
+export const TRANSACTION_STATUS_CONFIRMED = 'TRANSACTIONS/TRANSACTION_STATUS_CONFIRMED';
+
 
 const initialState = Immutable.fromJS(
     {
@@ -676,7 +685,7 @@ const initialState = Immutable.fromJS(
       /**
        * System
        */
-      step: 1,
+      step: 2,
       type: 'basic',
 
       /**
@@ -724,8 +733,29 @@ const initialState = Immutable.fromJS(
       tokenPriceUnitSymbol: 'ETH',
       market: 'Oasisdex',
 
-      transaction: {
-        list: [],
+      transactions: {
+        list: [
+          {
+            type: TRANSACTION_TYPE_CREATE_PROXY_ACC,
+            status: TRANSACTION_STATUS_SIGNED,
+            amount: 1.12345,
+          },
+          {
+            type: TRANSACTION_TYPE_DEPOSIT,
+            status: TRANSACTION_STATUS_SIGNED,
+            amount: 1.12345,
+            token: 'WETH'
+
+          },
+          {
+            type: TRANSACTION_TYPE_BUY,
+            status: TRANSACTION_STATUS_WAITING,
+            amount: 22.12345,
+            token: 'SAI'
+
+          },
+
+        ],
         gasPrice: {
           last_updated: null,
           value: null
@@ -740,22 +770,22 @@ const initialState = Immutable.fromJS(
 const reducer = handleActions({
   [SellAllAmountPayEth]: (state) =>
       state
-      .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_SELL_ALL),
+      .setIn(['transactions', 'type'], constants.TRANSACTION_TYPE_SELL_ALL),
   [BuyAllAmountPayEth]: (state) =>
       state
-      .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_BUY_ALL),
+      .setIn(['transactions', 'type'], constants.TRANSACTION_TYPE_BUY_ALL),
   [SellAllAmount]:(state) =>
       state
-      .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_SELL_ALL),
+      .setIn(['transactions', 'type'], constants.TRANSACTION_TYPE_SELL_ALL),
   [BuyAllAmount]: (state) =>
       state
-      .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_BUY_ALL),
+      .setIn(['transactions', 'type'], constants.TRANSACTION_TYPE_BUY_ALL),
   [SellAllAmountBuyEth]: (state) =>
       state
-      .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_SELL_ALL),
+      .setIn(['transactions', 'type'], constants.TRANSACTION_TYPE_SELL_ALL),
   [BuyAllAmountBuyEth]: (state) =>
       state
-      .setIn(['transaction', 'type'], constants.TRANSACTION_TYPE_BUY_ALL),
+      .setIn(['transactions', 'type'], constants.TRANSACTION_TYPE_BUY_ALL),
   [SetUserAccountProxyContractAddress]: (state, {payload}) =>
       state.setIn(payload),
   /**
@@ -866,13 +896,13 @@ const reducer = handleActions({
 
   [SetTransactionGasPrice]: (state, {payload}) =>
       state
-      .setIn(['transaction','gasPrice','value'], payload)
-      .setIn(['transaction','gasPrice','last_updated'], Date.now())
+      .setIn(['transactions','gasPrice','value'], payload)
+      .setIn(['transactions','gasPrice','last_updated'], Date.now())
   ,
   [SetTransactionType]: (state, {payload}) =>
-      state.setIn(['transaction', 'type'], payload),
+      state.setIn(['transactions', 'type'], payload),
   [ResetTransactionType]: (state, {payload}) =>
-      state.setIn(['transaction', 'type'], null),
+      state.setIn(['transactions', 'type'], null),
   [SetTransactionFee]: (state, {payload}) =>
       state
       .update(
@@ -910,7 +940,7 @@ const reducer = handleActions({
     state
     .update('transactionFee',
         () => {
-          const gasPrice = state.getIn(['transaction','gasPrice', 'value']);
+          const gasPrice = state.getIn(['transactions','gasPrice', 'value']);
           return web3
             .toBigNumber(web3
             .fromWei(payload, 'ether'))
