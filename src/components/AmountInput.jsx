@@ -42,27 +42,24 @@ class AmountInput extends PureComponent {
   }
 
   onValueChange() {
-    console.log(this.inputRef);
     const {
       name,
-      selectedTokens: {buy, deposit}, appState,
+      selectedTokens: { buy, deposit },
       errors
     } = this.props;
     switch (name) {
       case 'buy':
         this.props.onChange(
-            deposit, buy, this.inputRef.value, appState, hasErrors(errors)
+            deposit, buy, this.inputRef.value, hasErrors(errors)
         );
         break;
       case 'deposit':
         this.props.onChange(
-            deposit, buy, this.inputRef.value, appState, hasErrors(errors)
+            deposit, buy, this.inputRef.value, hasErrors(errors)
         );
 
         break;
     }
-
-
     if (!hasFocus(this.inputRef)) { this.format(); }
   }
 
