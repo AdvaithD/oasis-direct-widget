@@ -59,6 +59,15 @@ class TradeDetails extends PureComponent {
         <div className="Heading">
           <h3>Choose which Assets to trade</h3>
         </div>
+        <div className="InfoBox">
+          <Pictogram symbol={'alert'}/>
+          <span className="Label">
+            Order details are estimations and may vary
+          </span>
+          <span className="Value">
+            5%
+          </span>
+        </div>
         <div>
           <form>
             <div>
@@ -79,7 +88,7 @@ class TradeDetails extends PureComponent {
                 />
               </div>
               <div className="Separator">
-                <Pictogram symbol={'trade'}/>
+                <Pictogram symbol={'swap'}/>
               </div>
               <div className='TradeTokenSelector'>
                 <TradeToken

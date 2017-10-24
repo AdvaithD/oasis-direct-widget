@@ -15,7 +15,7 @@
                             <use xlink:href="#path-1"></use>
                         </mask>
                         <g id="a"></g>
-                        <polygon id="Path" fill="#49494A" mask="url(#mask-2)" points="14.01 11 7 11 7 13 14.01 13 14.01 16 18 12 14.01 8"></polygon>
+                        <polygon id="Path" fill="#E6E6E6" mask="url(#mask-2)" points="14.01 11 7 11 7 13 14.01 13 14.01 16 18 12 14.01 8"></polygon>
                     </g>
                 </g>
             </g>

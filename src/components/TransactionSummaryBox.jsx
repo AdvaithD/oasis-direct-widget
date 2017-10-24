@@ -66,7 +66,7 @@ class TransactionSummaryBox extends PureComponent {
     const { token, type } = this.props;
     switch (type) {
       case TRANSACTION_TYPE_CREATE_PROXY_ACC:
-        return (<Pictogram symbol={'account'}/>)
+        return (<Pictogram symbol={'profile'}/>)
     }
     return (<Pictogram symbol={token}/>);
   }

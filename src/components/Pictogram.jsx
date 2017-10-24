@@ -18,8 +18,11 @@ const tags = {
   GNT: (<Golem/>),
   DGX: (<Digix/>),
   SAI: (<Sai/>),
-  trade: (<img alt="arrow" src="/assets/od-icons/od_transition_arrow.svg"/>),
-  account: (<img src="" alt="account"/>)
+  swap: (<img alt="swap icon" src="/assets/od-icons/od_swap_arrow.svg"/>),
+  arrow: (<img alt="arrow icon" src="/assets/od-icons/od_arrow.svg"/>),
+  done: (<img alt="tick icon " src="/assets/od-icons/od_done.svg"/>),
+  profile: (<img alt="profile icon" src="/assets/od-icons/od_done.svg"/>),
+  alert: (<img alt="alert icon" src="/assets/od-icons/od_alert.svg"/>),
 };
 
 const propTypes = PropTypes && {

@@ -684,6 +684,7 @@ const initialState = Immutable.fromJS(
       eth: {
         system: {},
         network: {},
+
         defaultAccountBalance: null
       },
 
