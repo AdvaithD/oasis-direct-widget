@@ -207,7 +207,16 @@ function DepositAmountChanged(
 ) {
 
   return async (dispatch, store) => {
-    if(!isNaN(parseFloat(value)) && Number(value) >= 0) {
+
+    if(!value) {
+
+      dispatch(ResetInfoBox());
+      dispatch(DepositAmountResetErrors());
+      dispatch(ResetDepositAmountInput());
+      dispatch(ResetBuyAmountInput());
+
+    } else if(!isNaN(parseFloat(value)) && Number(value) >= 0) {
+
       const bnValue = new BigNumber(value);
       dispatch({
         type: DEPOSIT_AMOUNT_CHANGED,
@@ -251,10 +260,6 @@ function DepositAmountChanged(
           dispatch(SetTransactionType(constants.TRANSACTION_TYPE_SELL_ALL))
         }
 
-      } else {
-        dispatch(ResetInfoBox());
-        dispatch(ResetBuyAmountInput());
-
       }
     }
   }
@@ -263,7 +268,15 @@ function DepositAmountChanged(
 
 function BuyAmountChanged(buyToken, receiveToken, value, hasErrors) {
   return async (dispatch, store) => {
-    if(!isNaN(parseFloat(value)) && Number(value) >= 0) {
+
+    if(!value) {
+
+      dispatch(ResetInfoBox());
+      dispatch(BuyAmountResetErrors());
+      dispatch(ResetBuyAmountInput());
+      dispatch(ResetDepositAmountInput());
+
+    } else if(!isNaN(parseFloat(value)) && Number(value) >= 0) {
       const bnValue = new BigNumber(value);
       dispatch({
         type: BUY_AMOUNT_CHANGED,
@@ -287,10 +300,6 @@ function BuyAmountChanged(buyToken, receiveToken, value, hasErrors) {
               )
           );
           dispatch(SetTransactionType(constants.TRANSACTION_TYPE_BUY_ALL))
-
-      } else {
-        dispatch(ResetInfoBox());
-        dispatch(ResetDepositAmountInput());
       }
     }
   }
